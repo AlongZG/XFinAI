@@ -1,10 +1,18 @@
 import pandas as pd
+import sys
+sys.path.append("../")
+
+import xfinai_config
 
 # Load Origin Data
 df_ic = pd.read_pickle('../data/IC_1m.pkl')
 df_if = pd.read_pickle('../data/IF_1m.pkl')
 df_ih = pd.read_pickle('../data/IH_1m.pkl')
 
+#Add time restrict
+df_ic = df_ic.loc[xfinai_config.data_start_time:]
+df_if = df_if.loc[xfinai_config.data_start_time:]
+df_ih = df_ih.loc[xfinai_config.data_start_time:]
 
 #Calc Return
 def calc_return(df):
