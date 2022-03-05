@@ -57,9 +57,9 @@ def data_split(df):
 def main():
     # Load Origin Data
     glog.info("Loading Origin Data")
-    df_ic = pd.read_pickle('../data/data_processed/ic_processed.pkl')
-    df_ih = pd.read_pickle('../data/data_processed/if_processed.pkl')
-    df_if = pd.read_pickle('../data/data_processed/ih_processed.pkl')
+    df_ic = pd.read_pickle(f'{xfinai_config.processed_data_path}/ic_processed.pkl')
+    df_ih = pd.read_pickle(f'{xfinai_config.processed_data_path}/if_processed.pkl')
+    df_if = pd.read_pickle(f'{xfinai_config.processed_data_path}/ih_processed.pkl')
 
     # Split Data
     glog.info("Split Data")
@@ -104,9 +104,9 @@ def main():
 
     # Save DataLoader
     glog.info("Saving dataloader")
-    joblib.dump(train_dataloader_list, './data_loaders/train_dataloader_list.pkl')
-    joblib.dump(val_dataloader_list, './data_loaders/val_dataloader_list.pkl')
-    joblib.dump(test_dataloader_list, './data_loaders/test_dataloader_list.pkl')
+    joblib.dump(train_dataloader_list, f'{xfinai_config.data_loader_path}/train_dataloader_list.pkl')
+    joblib.dump(val_dataloader_list, f'{xfinai_config.data_loader_path}/val_dataloader_list.pkl')
+    joblib.dump(test_dataloader_list, f'{xfinai_config.data_loader_path}/test_dataloader_list.pkl')
 
 
 if __name__ == '__main__':
