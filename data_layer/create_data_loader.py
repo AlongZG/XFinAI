@@ -75,9 +75,9 @@ def main():
     # Train Scaler
     glog.info("Train Scaler")
     ic_scaler, if_scaler, ih_scaler = StandardScaler(), StandardScaler(), StandardScaler()
-    if_scaler.fit(train_data_ic[xfinai_config.features_list])
     ic_scaler.fit(train_data_ic[xfinai_config.features_list])
-    ih_scaler.fit(train_data_ic[xfinai_config.features_list])
+    if_scaler.fit(train_data_if[xfinai_config.features_list])
+    ih_scaler.fit(train_data_ih[xfinai_config.features_list])
     scaler_list = [if_scaler, ic_scaler, ih_scaler]
 
     #  datasets and dataloader for 3 futures

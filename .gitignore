@@ -1,4 +1,6 @@
 *.pkl
 *.csv
 *.ipynb_checkpoints
+*.png
 /__pycache__
+*.idea
