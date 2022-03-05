@@ -1,6 +1,7 @@
 import torch 
 from torch import nn, optim
 import numpy as np
+import matplotlib.pyplot as plt
 import joblib
 import sys
 
@@ -10,18 +11,17 @@ from data_layer.create_data_loader import FuturesDataset
 
 
 class LSTM(nn.Module):
-    def __init__(self, input_size, hidden_size, num_layers, 
-    output_size, dropout_prob, device, directions=1):
+    def __init__(self, input_size, hidden_size, num_layers, output_size, dropout_prob, device, directions=1):
         super(LSTM, self).__init__()
 
         self.num_layers = num_layers
         self.hidden_size = hidden_size
         self.directions = directions
+        self.device = device
 
         self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True, dropout=dropout_prob)
         self.dropout = nn.Dropout(dropout_prob)
         self.linear = nn.Linear(hidden_size, output_size)
-        self.device = device
 
     def init_hidden_states(self, batch_size):
         state_dim = (self.num_layers * self.directions, batch_size, self.hidden_size)
@@ -29,25 +29,22 @@ class LSTM(nn.Module):
 
     def forward(self, x, states):
         x, (h, c) = self.lstm(x, states)
-        out = self.linear(x)
-        return out, (h, c)
+        pred = self.linear(x)
+        return pred[:,1,:], (h, c)
 
 
 def train(train_data_loader, val_data_loader, model,
- criterion, optimizer, epochs, validate_every=2):
+ criterion, optimizer, epochs, validate_every=1):
 
-    training_losses = []
+    train_losses = []
     validation_losses = []
 
 
     for epoch in range(epochs):
         # Set to train mode
         model.train()
-
-        # Initialize hidden and cell states with dimension:
-        # (num_layers * num_directions, batch, hidden_size)
-        states = model.init_hidden_states(xfinai_config.batch_size)
-        running_training_loss = 0.0
+        training_states = model.init_hidden_states(xfinai_config.lstm_model_config['batch_size'])
+        running_train_loss = 0.0
 
         # Begin training
         for idx, (x_batch, y_batch) in enumerate(train_data_loader):
@@ -56,31 +53,26 @@ def train(train_data_loader, val_data_loader, model,
             y_batch = y_batch.float().to(model.device)
 
             # Truncated Backpropagation
-            states = [state.detach() for state in states]          
-
-            optimizer.zero_grad()
-
+            training_states = [state.detach() for state in training_states]    
             # Make prediction
-            output, states = model(x_batch, states)
+            y_pred, training_states = model(x_batch, training_states)
 
             # Calculate loss
-            loss = criterion(output[:, -1, :], y_batch)
+            loss = criterion(y_pred, y_batch)
             loss.backward()
-            running_training_loss += loss.item()
+            running_train_loss += loss.item()
 
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
             optimizer.step()
+            optimizer.zero_grad()
 
         # Average loss across timesteps
-        training_losses.append(running_training_loss / len(train_data_loader))
+        train_losses.append(running_train_loss / len(train_data_loader))
 
         if epoch % validate_every == 0:
-
             # Set to eval mode
             model.eval()
-
-            validation_states = model.init_hidden_states(xfinai_config.batch_size)
             running_validation_loss = 0.0
+            validation_states = model.init_hidden_states(xfinai_config.lstm_model_config['batch_size'])
 
             for idx, (x_batch, y_batch) in enumerate(val_data_loader):
 
@@ -89,16 +81,26 @@ def train(train_data_loader, val_data_loader, model,
                 y_batch = y_batch.float().to(model.device)
 
                 validation_states = [state.detach() for state in validation_states]
-                output, validation_states = model(x_batch, validation_states)
-                validation_loss = criterion(output[:, -1, :], y_batch)
+                y_pred, validation_states = model(x_batch, validation_states)
+
+                validation_loss = criterion(y_pred, y_batch)
                 running_validation_loss += validation_loss.item()
 
         validation_losses.append(running_validation_loss / len(val_data_loader))
     
-        print(f"Epoch:{epoch} train_loss:{running_training_loss} val_loss:{running_validation_loss}")
+        print(f"Epoch:{epoch} train_loss:{running_train_loss} val_loss:{running_validation_loss}")
+        
+    return train_losses, validation_losses
+
+def plot_loss(losses, epoch_num, loss_name):
+    plt.plot(range(epoch_num), losses, 'r--', label=loss_name)
+    plt.legend()
+    plt.title(f"{loss_name} Per Epoch")
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.show()
 
 def main():
-    
     # Load Dataloader
     train_dataloader_list = joblib.load('../data_layer/data_loaders/train_dataloader_list.pkl')
     val_dataloader_list = joblib.load('../data_layer/data_loaders/val_dataloader_list.pkl')
@@ -110,7 +112,7 @@ def main():
 
     # Transfer to accelerator
     use_cuda = torch.cuda.is_available()
-    device = torch.device("cuda:0" if use_cuda else "cpu")
+    device = torch.device("cuda" if use_cuda else "cpu")
 
 
     model = LSTM(
@@ -130,8 +132,12 @@ def main():
 
     print(model)
 
-
-    train(train_dataloader_ic, val_dataloader_ic, model, criterion, optimizer, epochs)
+    train_losses, validation_losses = train(train_dataloader_ic, val_dataloader_ic, model, criterion, optimizer, epochs)
+    plot_loss(train_losses, epochs,'Train Loss')   
+    plot_loss(validation_losses, epochs,'Validation Loss')    
+ 
+    return train_losses, validation_losses
 
 if __name__ == '__main__':
-    main()
+    train_losses, validation_losses = main()
+
