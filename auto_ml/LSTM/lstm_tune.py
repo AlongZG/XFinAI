@@ -2,16 +2,13 @@ import glog
 import torch
 from torch import nn, optim
 from torch.utils.data import DataLoader
-import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import joblib
 import sys
+import nni
 
-sys.path.append('../')
+sys.path.append('../..')
 import xfinai_config
 from data_layer.base_dataset import FuturesDataset
-from utils import path_wrapper, plotter
 
 
 class LSTM(nn.Module):
@@ -45,43 +42,6 @@ def load_data(future_index):
     return train_data, val_data, test_data
 
 
-def eval_model(model, dataloader, data_set_name, future_name):
-    with torch.no_grad():
-        y_real_list = np.array([])
-        y_pred_list = np.array([])
-        states = model.init_hidden_states(xfinai_config.lstm_model_config['batch_size'])
-
-        for idx, (x_batch, y_batch) in enumerate(dataloader):
-            # Convert to Tensors
-            x_batch = x_batch.float().to(model.device)
-            y_batch = y_batch.float().to(model.device)
-
-            states = [state.detach() for state in states]
-            y_pred, states = model(x_batch, states)
-
-            y_real_list = np.append(y_real_list, y_batch.squeeze(1).cpu().numpy())
-            y_pred_list = np.append(y_pred_list, y_pred.squeeze(1).cpu().numpy())
-
-    plt.figure(figsize=[15, 3], dpi=100)
-    plt.plot(y_real_list, label=f'{data_set_name}_real')
-    plt.plot(y_pred_list, label=f'{data_set_name}_pred')
-    plt.legend()
-    plt.title(f"Inference On {data_set_name} Set - {model.name} {future_name}")
-    plt.xlabel('Time')
-    plt.ylabel('Return')
-    plt.subplots_adjust(bottom=0.15)
-
-    result_dir = path_wrapper.wrap_path(f"{xfinai_config.inference_result_path}/{future_name}/{model.name}")
-    plt.savefig(f"{result_dir}/{data_set_name}.png")
-
-
-def save_model(model, future_name):
-    dir_path = path_wrapper.wrap_path(f"{xfinai_config.model_save_path}/{future_name}")
-    save_path = f"{dir_path}/{model.name}.pth"
-    glog.info(f"Starting save model state, save_path: {save_path}")
-    torch.save(model.state_dict(), save_path)
-
-
 def train(train_data_loader, model, criterion, optimizer, params):
     glog.info(f"Start Training Model")
 
@@ -112,11 +72,8 @@ def train(train_data_loader, model, criterion, optimizer, params):
 
     glog.info(f"End Training Model")
 
-    train_loss_average = running_train_loss / len(train_data_loader)
-    return model, train_loss_average
 
-
-def validate(val_data_loader, model, criterion, params):
+def test(val_data_loader, model, criterion, params):
     # Set to eval mode
     model.eval()
     running_val_loss = 0.0
@@ -138,27 +95,22 @@ def validate(val_data_loader, model, criterion, params):
     return val_loss_average
 
 
-def main(future_name, params):
-    # Load Data
-    train_data, val_data, test_data = load_data(future_name)
+def main(params, future_index):
+    train_data, val_data, test_data = load_data(future_index)
 
     # Transfer to accelerator
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
 
     # Create dataset & data loader
-    train_dataset = FuturesDataset(data=train_data, label=xfinai_config.label, seq_length=xfinai_config.seq_length,
+    train_dataset = FuturesDataset(data=train_data, label=xfinai_config.label, seq_length=params['seq_length'],
                                    features_list=xfinai_config.features_list)
-    val_dataset = FuturesDataset(data=train_data, label=xfinai_config.label, seq_length=xfinai_config.seq_length,
+    val_dataset = FuturesDataset(data=train_data, label=xfinai_config.label, seq_length=params['seq_length'],
                                  features_list=xfinai_config.features_list)
-    test_dataset = FuturesDataset(data=test_data, label=xfinai_config.label, seq_length=xfinai_config.seq_length,
-                                  features_list=xfinai_config.features_list)
     train_loader = DataLoader(dataset=train_dataset, **xfinai_config.data_loader_config,
                               batch_size=params['batch_size'])
     val_loader = DataLoader(dataset=val_dataset, **xfinai_config.data_loader_config,
                             batch_size=params['batch_size'])
-    test_loader = DataLoader(dataset=test_dataset, **xfinai_config.data_loader_config,
-                             batch_size=params['batch_size'])
 
     # create model instance
     model = LSTM(
@@ -177,44 +129,31 @@ def main(future_name, params):
                             weight_decay=params['weight_decay'])
 
     epochs = xfinai_config.lstm_model_config['epochs']
-
     print(model)
-    train_losses = []
-    val_losses = []
+
     # train the model
     for epoch in range(epochs):
-        trained_model, train_score = train(train_data_loader=train_loader, model=model, criterion=criterion,
-                                           optimizer=optimizer,
-                                           params=params)
-        val_score = validate(val_data_loader=val_loader, model=trained_model, criterion=criterion, params=params)
+        train(train_data_loader=train_loader, model=model, criterion=criterion, optimizer=optimizer, params=params)
+        test_acc = test(val_data_loader=val_loader, model=model, criterion=criterion, params=params)
 
         # report intermediate result
-        print(f"Epoch :{epoch} train_score {train_score} val_score {val_score}")
-        train_losses.append(train_score)
-        val_losses.append(val_score)
+        nni.report_intermediate_result(test_acc)
+        # print(test_acc)
 
-    # save the model
-    save_model(trained_model, future_name)
-
-    # plot losses
-    plotter.plot_loss(train_losses, epochs, 'Train_Loss', trained_model.name, future_name)
-    plotter.plot_loss(val_losses, epochs, 'Val_Loss', trained_model.name, future_name)
-
-    # eval model on 3 datasets
-    for dataloader, data_set_name in zip([train_loader, val_loader, test_loader],
-                                         ['Train', 'Val', 'Test']):
-        eval_model(model=trained_model, dataloader=dataloader, data_set_name=data_set_name,
-                   future_name=future_name)
+    # report final result
+    nni.report_final_result(test_acc)
+    # print(test_acc)
 
 
 if __name__ == '__main__':
     future_name = 'ic'
-    params = {
-        "batch_size": 64,
-        "hidden_size": 128,
-        "weight_decay": 0.05132457275152555,
-        "num_layers": 1,
-        "learning_rate": 0.02711797065157294,
-        "dropout_prob": 0.16480555909465516
-    }
-    main(future_name, params)
+    train_params = nni.get_next_parameter()
+    # train_params = {
+    #     "batch_size": 128,
+    #     "hidden_size": 4,
+    #     "weight_decay": 0.0001,
+    #     "num_layers": 2,
+    #     "learning_rate": 0.1,
+    #     "dropout_prob": 0.1
+    # }
+    main(train_params, future_name)

@@ -3,9 +3,9 @@ import pandas as pd
 # data config
 data_start_time = pd.to_datetime('2021-10-01')
 futures_index_map = {
-    'IC': 0,
-    'IH': 1,
-    'IF': 2
+    'ic': 0,
+    'ih': 1,
+    'if': 2
 }
 
 # dataset config
@@ -15,7 +15,7 @@ test_size = 1 - train_size - val_size
 
 # feature config
 label = 'return'
-features_list = ['open', 'high', 'low', 'close', 'volume', 'money']
+features_list = ['open', 'high', 'low', 'close', 'volume', 'money', 'open_interest']
 
 # model config
 seq_length = 32
@@ -29,21 +29,20 @@ lstm_model_config = {
     'dropout_prob': 0.1,
     'learning_rate': 0.001,
     'weight_decay': 0.01,
-    'epochs': 1
+    'epochs': 20
 }
 
 # feature config
-data_loader_config = {'batch_size': batch_size,
-                      'shuffle': False,
+data_loader_config = {'shuffle': False,
                       'drop_last': True,
-                      'num_workers': 2,
+                      'num_workers': 1,
                       'pin_memory': True
                       }
 
 # PATH
-origin_data_path = 'D:/毕业论文/XFinAI/data/origin_data'
-processed_data_path = 'D:/毕业论文/XFinAI/data/data_processed'
-data_loader_path = 'D:/毕业论文/XFinAI/data_layer/data_loaders'
-losses_path = 'D:/毕业论文/XFinAI/result/losses'
-inference_result_path = 'D:/毕业论文/XFinAI/result/inference_result'
-model_save_path = 'D:/毕业论文/XFinAI/model_layer/trained_models'
+origin_data_path = 'D:/projects/XFinAI/data/origin_data'
+processed_data_path = 'D:/projects/XFinAI/data/data_processed'
+featured_data_path = 'D:/projects/XFinAI/data/data_featured'
+losses_path = 'D:/projects/XFinAI/result/losses'
+inference_result_path = 'D:/projects/XFinAI/result/inference_result'
+model_save_path = 'D:/projects/XFinAI/model_layer/trained_models'
