@@ -147,12 +147,9 @@ def main(future_name, params):
     device = torch.device("cuda" if use_cuda else "cpu")
 
     # Create dataset & data loader
-    train_dataset = FuturesDataset(data=train_data, label=xfinai_config.label, seq_length=xfinai_config.seq_length,
-                                   features_list=xfinai_config.features_list)
-    val_dataset = FuturesDataset(data=train_data, label=xfinai_config.label, seq_length=xfinai_config.seq_length,
-                                 features_list=xfinai_config.features_list)
-    test_dataset = FuturesDataset(data=test_data, label=xfinai_config.label, seq_length=xfinai_config.seq_length,
-                                  features_list=xfinai_config.features_list)
+    train_dataset = FuturesDataset(data=train_data, label=xfinai_config.label, seq_length=params['seq_length'])
+    val_dataset = FuturesDataset(data=train_data, label=xfinai_config.label, seq_length=params['seq_length'])
+    test_dataset = FuturesDataset(data=test_data, label=xfinai_config.label, seq_length=params['seq_length'])
     train_loader = DataLoader(dataset=train_dataset, **xfinai_config.data_loader_config,
                               batch_size=params['batch_size'])
     val_loader = DataLoader(dataset=val_dataset, **xfinai_config.data_loader_config,
@@ -162,7 +159,7 @@ def main(future_name, params):
 
     # create model instance
     model = LSTM(
-        input_size=xfinai_config.lstm_model_config['input_size'],
+        input_size=len(train_dataset.features_list),
         hidden_size=params['hidden_size'],
         num_layers=params['num_layers'],
         output_size=xfinai_config.lstm_model_config['output_size'],
@@ -170,7 +167,7 @@ def main(future_name, params):
         device=device
     ).to(device)
 
-    criterion = nn.MSELoss()
+    criterion = nn.L1Loss()
 
     optimizer = optim.AdamW(model.linear.parameters(),
                             lr=params['learning_rate'],
@@ -211,10 +208,11 @@ if __name__ == '__main__':
     future_name = 'ic'
     params = {
         "batch_size": 64,
-        "hidden_size": 128,
-        "weight_decay": 0.05132457275152555,
-        "num_layers": 1,
-        "learning_rate": 0.02711797065157294,
-        "dropout_prob": 0.16480555909465516
+        "hidden_size": 4,
+        "seq_length": 32,
+        "weight_decay": 0.09190719792818434,
+        "num_layers": 16,
+        "learning_rate": 0.02362264773512453,
+        "dropout_prob": 0.10062393919712778
     }
     main(future_name, params)

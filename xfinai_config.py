@@ -15,20 +15,19 @@ test_size = 1 - train_size - val_size
 
 # feature config
 label = 'return'
-features_list = ['open', 'high', 'low', 'close', 'volume', 'money', 'open_interest']
+corr_threshold = 0.8
+null_percent = 0.1
 
 # model config
-seq_length = 32
-batch_size = 64
 lstm_model_config = {
-    'batch_size': batch_size,
-    'input_size': len(features_list),
-    'hidden_size': 10,
-    'num_layers': 2,
+    "batch_size": 64,
+    "hidden_size": 4,
+    "seq_length": 32,
+    "weight_decay": 0.09190719792818434,
+    "num_layers": 16,
+    "learning_rate": 0.02362264773512453,
+    "dropout_prob": 0.10062393919712778,
     'output_size': 1,
-    'dropout_prob': 0.1,
-    'learning_rate': 0.001,
-    'weight_decay': 0.01,
     'epochs': 20
 }
 

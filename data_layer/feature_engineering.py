@@ -1,15 +1,14 @@
 from torch.utils.data import DataLoader, Dataset
 from sklearn.preprocessing import StandardScaler
 import pandas as pd
-import math
 import glog
-import joblib
 import sys
+from ta_factors import TaFactor
+from feature_selector import corr_selector
 
 sys.path.append("../")
-
 import xfinai_config
-from utils import path_wrapper
+from utils import path_wrapper, data_utils
 
 
 def load_processed_data(index):
@@ -17,22 +16,36 @@ def load_processed_data(index):
     return df
 
 
-def data_split(df):
-    data_size = df.shape[0]
-    train_data = df.iloc[:math.floor(xfinai_config.train_size * data_size)]
-    val_data = df.iloc[math.ceil(xfinai_config.train_size * data_size):math.floor(
-        (xfinai_config.train_size + xfinai_config.val_size) * data_size)]
-    test_data = df.iloc[math.floor((xfinai_config.train_size + xfinai_config.val_size) * data_size):]
+def fe_ta(df):
+    tf = TaFactor(df)
+    return tf.run()
+
+
+def fe_scale(train_data, val_data, test_data):
+    features_list = list(train_data.columns)
+    features_list.remove(xfinai_config.label)
+
+    scaler = StandardScaler()
+    scaler.fit(train_data[features_list])
+
+    train_data.loc[:, features_list] = scaler.transform(train_data[features_list])
+    val_data.loc[:, features_list] = scaler.transform(val_data[features_list])
+    test_data.loc[:, features_list] = scaler.transform(test_data[features_list])
     return train_data, val_data, test_data
 
 
-def fe_pipeline(train_data, val_data, test_data):
-    scaler = StandardScaler()
-    scaler.fit(train_data[xfinai_config.features_list])
+def feature_select(train_data, val_data, test_data):
+    features_list = list(train_data.columns)
+    features_list.remove(xfinai_config.label)
 
-    train_data.loc[:, xfinai_config.features_list] = scaler.transform(train_data[xfinai_config.features_list])
-    val_data.loc[:, xfinai_config.features_list] = scaler.transform(val_data[xfinai_config.features_list])
-    test_data.loc[:, xfinai_config.features_list] = scaler.transform(test_data[xfinai_config.features_list])
+    feature_selected_list = list(corr_selector(df_feature=train_data[features_list],
+                                         threshold=xfinai_config.corr_threshold).columns)
+    feature_selected_list.append(xfinai_config.label)
+
+    train_data = train_data[feature_selected_list]
+    val_data = val_data[feature_selected_list]
+    test_data = test_data[feature_selected_list]
+
     return train_data, val_data, test_data
 
 
@@ -49,15 +62,23 @@ def main():
         glog.info(f"Loading Origin Data future_index: {future_index}")
         df_processed = load_processed_data(future_index)
 
+        # generate ta_factors
+        df_ta_factor = fe_ta(df_processed)
+        df_ta_factor = data_utils.clean_data(df_ta_factor)
+
         # Split Data
-        glog.info("Split Data future_index: {future_index}")
-        train_data, val_data, test_data = data_split(df_processed)
+        glog.info(f"Split Data future_index: {future_index}")
+        train_data, val_data, test_data = data_utils.split_data(df_ta_factor)
 
         # Feature Engineering, Train Scaler
-        glog.info("Feature Engineering future_index: {future_index}")
-        train_data, val_data, test_data = fe_pipeline(train_data, val_data, test_data)
+        glog.info(f"Feature Scaling future_index: {future_index}")
+        train_data, val_data, test_data = fe_scale(train_data, val_data, test_data)
 
-        glog.info("Saving Data: {future_index}")
+        # select features
+        glog.info(f"Feature Selecting future_index: {future_index}")
+        train_data, val_data, test_data = feature_select(train_data, val_data, test_data)
+
+        glog.info(f"Saving Data: {future_index}")
         save_data(train_data, val_data, test_data, index=future_index)
 
 

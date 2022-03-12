@@ -3,5 +3,5 @@
 *.ipynb_checkpoints
 *.png
 /__pycache__
-*.idea
+*.idea/
 *.pth

@@ -2,13 +2,19 @@ import glog
 import torch
 from torch import nn, optim
 from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
 import pandas as pd
 import sys
 import nni
+import os
 
 sys.path.append('../..')
 import xfinai_config
 from data_layer.base_dataset import FuturesDataset
+
+# initialize tensorboard writer
+writer = SummaryWriter(log_dir=os.path.join(os.environ['NNI_OUTPUT_DIR'], 'tensorboard'))
+# writer = SummaryWriter(log_dir=os.path.join('./', 'tensorboard'))
 
 
 class LSTM(nn.Module):
@@ -70,7 +76,9 @@ def train(train_data_loader, model, criterion, optimizer, params):
 
         optimizer.step()
 
+    train_loss_average = running_train_loss / len(train_data_loader)
     glog.info(f"End Training Model")
+    return model, running_train_loss
 
 
 def test(val_data_loader, model, criterion, params):
@@ -103,10 +111,8 @@ def main(params, future_index):
     device = torch.device("cuda" if use_cuda else "cpu")
 
     # Create dataset & data loader
-    train_dataset = FuturesDataset(data=train_data, label=xfinai_config.label, seq_length=params['seq_length'],
-                                   features_list=xfinai_config.features_list)
-    val_dataset = FuturesDataset(data=train_data, label=xfinai_config.label, seq_length=params['seq_length'],
-                                 features_list=xfinai_config.features_list)
+    train_dataset = FuturesDataset(data=train_data, label=xfinai_config.label, seq_length=params['seq_length'])
+    val_dataset = FuturesDataset(data=train_data, label=xfinai_config.label, seq_length=params['seq_length'])
     train_loader = DataLoader(dataset=train_dataset, **xfinai_config.data_loader_config,
                               batch_size=params['batch_size'])
     val_loader = DataLoader(dataset=val_dataset, **xfinai_config.data_loader_config,
@@ -114,7 +120,7 @@ def main(params, future_index):
 
     # create model instance
     model = LSTM(
-        input_size=xfinai_config.lstm_model_config['input_size'],
+        input_size=len(train_dataset.features_list),
         hidden_size=params['hidden_size'],
         num_layers=params['num_layers'],
         output_size=xfinai_config.lstm_model_config['output_size'],
@@ -122,7 +128,7 @@ def main(params, future_index):
         device=device
     ).to(device)
 
-    criterion = nn.MSELoss()
+    criterion = nn.L1Loss()
 
     optimizer = optim.AdamW(model.linear.parameters(),
                             lr=params['learning_rate'],
@@ -133,24 +139,32 @@ def main(params, future_index):
 
     # train the model
     for epoch in range(epochs):
-        train(train_data_loader=train_loader, model=model, criterion=criterion, optimizer=optimizer, params=params)
-        test_acc = test(val_data_loader=val_loader, model=model, criterion=criterion, params=params)
+        model, train_loss = train(train_data_loader=train_loader, model=model, criterion=criterion, optimizer=optimizer,
+                                  params=params)
+        validation_loss = test(val_data_loader=val_loader, model=model, criterion=criterion, params=params)
 
         # report intermediate result
-        nni.report_intermediate_result(test_acc)
-        # print(test_acc)
+        nni.report_intermediate_result(validation_loss)
+        # print(validation_loss)
+
+        writer.add_scalar('Loss/train', train_loss, epoch)
+        writer.add_scalar('Loss/validation', validation_loss, epoch)
+
+    writer.close()
 
     # report final result
-    nni.report_final_result(test_acc)
-    # print(test_acc)
+    nni.report_final_result(validation_loss)
+    # print(validation_loss)
 
 
 if __name__ == '__main__':
-    future_name = 'ic'
+    ic = 'ic'
+    future_name = ic
     train_params = nni.get_next_parameter()
     # train_params = {
     #     "batch_size": 128,
     #     "hidden_size": 4,
+    #     "seq_length": 32,
     #     "weight_decay": 0.0001,
     #     "num_layers": 2,
     #     "learning_rate": 0.1,

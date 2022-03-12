@@ -4,16 +4,22 @@ from torch.utils.data import Dataset
 # Define Dataset BaseClass
 class FuturesDataset(Dataset):
 
-    def __init__(self, data, label, seq_length, features_list):
+    def __init__(self, data, label, seq_length):
         self.data = data
         self.label = label
-        self.features_list = features_list
+
         self.df_label = self.data[self.label]
         self.df_feature = self.data[self.features_list]
         self.seq_length = seq_length
 
         self.data_set = self.create_xy_pairs()
         self.data_length = len(self.data_set)
+
+    @property
+    def features_list(self):
+        features_list = list(self.data.columns)
+        features_list.remove(self.label)
+        return features_list
 
     def create_xy_pairs(self):
         pairs = []
