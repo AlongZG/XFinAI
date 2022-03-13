@@ -14,7 +14,8 @@ val_size = 0.2
 test_size = 1 - train_size - val_size
 
 # feature config
-label = 'return'
+label = 'close'
+label_time_lag = 1
 corr_threshold = 0.8
 null_percent = 0.1
 
@@ -28,7 +29,7 @@ lstm_model_config = {
     "learning_rate": 0.02362264773512453,
     "dropout_prob": 0.10062393919712778,
     'output_size': 1,
-    'epochs': 20
+    'epochs': 30
 }
 
 # feature config
@@ -42,6 +43,7 @@ data_loader_config = {'shuffle': False,
 origin_data_path = 'D:/projects/XFinAI/data/origin_data'
 processed_data_path = 'D:/projects/XFinAI/data/data_processed'
 featured_data_path = 'D:/projects/XFinAI/data/data_featured'
+scaler_path = 'D:/projects/XFinAI/data/scaler/'
 losses_path = 'D:/projects/XFinAI/result/losses'
 inference_result_path = 'D:/projects/XFinAI/result/inference_result'
 model_save_path = 'D:/projects/XFinAI/model_layer/trained_models'

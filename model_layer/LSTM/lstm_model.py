@@ -26,7 +26,7 @@ class LSTM(nn.Module):
 
         self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True, dropout=dropout_prob)
         self.dropout = nn.Dropout(dropout_prob)
-        self.linear = nn.Linear(hidden_size, output_size)
+        self.fc = nn.Linear(hidden_size, output_size)
 
     def init_hidden_states(self, batch_size):
         state_dim = (self.num_layers * self.directions, batch_size, self.hidden_size)
@@ -34,8 +34,8 @@ class LSTM(nn.Module):
 
     def forward(self, x, states):
         x, (h, c) = self.lstm(x, states)
-        pred = self.linear(x)
-        return pred[:, 1, :], (h, c)
+        x = self.fc(x)
+        return x[:, 1, :], (h, c)
 
 
 def load_data(future_index):
@@ -45,11 +45,11 @@ def load_data(future_index):
     return train_data, val_data, test_data
 
 
-def eval_model(model, dataloader, data_set_name, future_name):
+def eval_model(model, dataloader, data_set_name, future_name, params):
     with torch.no_grad():
         y_real_list = np.array([])
         y_pred_list = np.array([])
-        states = model.init_hidden_states(xfinai_config.lstm_model_config['batch_size'])
+        states = model.init_hidden_states(params['batch_size'])
 
         for idx, (x_batch, y_batch) in enumerate(dataloader):
             # Convert to Tensors
@@ -167,9 +167,9 @@ def main(future_name, params):
         device=device
     ).to(device)
 
-    criterion = nn.L1Loss()
+    criterion = nn.MSELoss()
 
-    optimizer = optim.AdamW(model.linear.parameters(),
+    optimizer = optim.AdamW(model.parameters(),
                             lr=params['learning_rate'],
                             weight_decay=params['weight_decay'])
 
@@ -201,18 +201,18 @@ def main(future_name, params):
     for dataloader, data_set_name in zip([train_loader, val_loader, test_loader],
                                          ['Train', 'Val', 'Test']):
         eval_model(model=trained_model, dataloader=dataloader, data_set_name=data_set_name,
-                   future_name=future_name)
+                   future_name=future_name, params=params)
 
 
 if __name__ == '__main__':
     future_name = 'ic'
     params = {
-        "batch_size": 64,
-        "hidden_size": 4,
-        "seq_length": 32,
-        "weight_decay": 0.09190719792818434,
-        "num_layers": 16,
-        "learning_rate": 0.02362264773512453,
-        "dropout_prob": 0.10062393919712778
+        "batch_size": 32,
+        "hidden_size": 64,
+        "seq_length": 8,
+        "weight_decay": 0.03699014272607559,
+        "num_layers": 8,
+        "learning_rate": 0.0006264079267383521,
+        "dropout_prob": 0.2149846528896436
     }
     main(future_name, params)

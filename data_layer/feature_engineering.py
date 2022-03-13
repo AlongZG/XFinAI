@@ -1,3 +1,4 @@
+import joblib
 from torch.utils.data import DataLoader, Dataset
 from sklearn.preprocessing import StandardScaler
 import pandas as pd
@@ -34,12 +35,25 @@ def fe_scale(train_data, val_data, test_data):
     return train_data, val_data, test_data
 
 
+def data_scale(train_data, val_data, test_data):
+    scaler = StandardScaler()
+    scaler.fit(train_data)
+
+    train_data.loc[:] = scaler.transform(train_data)
+    val_data.loc[:] = scaler.transform(val_data)
+    test_data.loc[:] = scaler.transform(test_data)
+
+    scaler_dir = path_wrapper.wrap_path(xfinai_config.scaler_path)
+    joblib.dump(scaler, f"{scaler_dir}/standard_scaler.pkl")
+    return train_data, val_data, test_data
+
+
 def feature_select(train_data, val_data, test_data):
     features_list = list(train_data.columns)
     features_list.remove(xfinai_config.label)
 
     feature_selected_list = list(corr_selector(df_feature=train_data[features_list],
-                                         threshold=xfinai_config.corr_threshold).columns)
+                                               threshold=xfinai_config.corr_threshold).columns)
     feature_selected_list.append(xfinai_config.label)
 
     train_data = train_data[feature_selected_list]

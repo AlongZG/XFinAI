@@ -78,7 +78,7 @@ def train(train_data_loader, model, criterion, optimizer, params):
 
     train_loss_average = running_train_loss / len(train_data_loader)
     glog.info(f"End Training Model")
-    return model, running_train_loss
+    return model, train_loss_average
 
 
 def test(val_data_loader, model, criterion, params):
