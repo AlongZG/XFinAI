@@ -7,6 +7,7 @@ futures_index_map = {
     'ih': 1,
     'if': 2
 }
+time_freq = '1m'
 
 # dataset config
 train_size = 0.7
@@ -14,22 +15,31 @@ val_size = 0.2
 test_size = 1 - train_size - val_size
 
 # feature config
-label = 'close'
+label = 'return'
 label_time_lag = 1
 corr_threshold = 0.8
 null_percent = 0.1
 
 # model config
-lstm_model_config = {
-    "batch_size": 64,
-    "hidden_size": 4,
-    "seq_length": 32,
-    "weight_decay": 0.09190719792818434,
-    "num_layers": 16,
-    "learning_rate": 0.02362264773512453,
-    "dropout_prob": 0.10062393919712778,
-    'output_size': 1,
-    'epochs': 30
+model_config = {
+    "rnn": {"batch_size": 64,
+            "hidden_size": 4,
+            "seq_length": 32,
+            "weight_decay": 0.09190719792818434,
+            "num_layers": 16,
+            "learning_rate": 0.02362264773512453,
+            "dropout_prob": 0.10062393919712778,
+            'output_size': 1,
+            'epochs': 10},
+    "lstm": {"batch_size": 64,
+             "hidden_size": 4,
+             "seq_length": 32,
+             "weight_decay": 0.09190719792818434,
+             "num_layers": 16,
+             "learning_rate": 0.02362264773512453,
+             "dropout_prob": 0.10062393919712778,
+             'output_size': 1,
+             'epochs': 10},
 }
 
 # feature config

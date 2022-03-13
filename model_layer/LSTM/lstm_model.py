@@ -5,12 +5,11 @@ from torch.utils.data import DataLoader
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import joblib
 import sys
 
 sys.path.append('../')
 import xfinai_config
-from data_layer.base_dataset import FuturesDataset
+from data_layer.base_dataset import FuturesDatasetRecurrent
 from utils import path_wrapper, plotter
 
 
@@ -62,7 +61,7 @@ def eval_model(model, dataloader, data_set_name, future_name, params):
             y_real_list = np.append(y_real_list, y_batch.squeeze(1).cpu().numpy())
             y_pred_list = np.append(y_pred_list, y_pred.squeeze(1).cpu().numpy())
 
-    plt.figure(figsize=[15, 3], dpi=100)
+    fig = plt.figure(figsize=[15, 3], dpi=100)
     plt.plot(y_real_list, label=f'{data_set_name}_real')
     plt.plot(y_pred_list, label=f'{data_set_name}_pred')
     plt.legend()
@@ -70,7 +69,6 @@ def eval_model(model, dataloader, data_set_name, future_name, params):
     plt.xlabel('Time')
     plt.ylabel('Return')
     plt.subplots_adjust(bottom=0.15)
-
     result_dir = path_wrapper.wrap_path(f"{xfinai_config.inference_result_path}/{future_name}/{model.name}")
     plt.savefig(f"{result_dir}/{data_set_name}.png")
 
@@ -100,6 +98,7 @@ def train(train_data_loader, model, criterion, optimizer, params):
 
         # Truncated Backpropagation
         training_states = [state.detach() for state in training_states]
+
         # Make prediction
         y_pred, training_states = model(x_batch, training_states)
 
@@ -147,9 +146,9 @@ def main(future_name, params):
     device = torch.device("cuda" if use_cuda else "cpu")
 
     # Create dataset & data loader
-    train_dataset = FuturesDataset(data=train_data, label=xfinai_config.label, seq_length=params['seq_length'])
-    val_dataset = FuturesDataset(data=train_data, label=xfinai_config.label, seq_length=params['seq_length'])
-    test_dataset = FuturesDataset(data=test_data, label=xfinai_config.label, seq_length=params['seq_length'])
+    train_dataset = FuturesDatasetRecurrent(data=train_data, label=xfinai_config.label, seq_length=params['seq_length'])
+    val_dataset = FuturesDatasetRecurrent(data=val_data, label=xfinai_config.label, seq_length=params['seq_length'])
+    test_dataset = FuturesDatasetRecurrent(data=test_data, label=xfinai_config.label, seq_length=params['seq_length'])
     train_loader = DataLoader(dataset=train_dataset, **xfinai_config.data_loader_config,
                               batch_size=params['batch_size'])
     val_loader = DataLoader(dataset=val_dataset, **xfinai_config.data_loader_config,
@@ -162,7 +161,7 @@ def main(future_name, params):
         input_size=len(train_dataset.features_list),
         hidden_size=params['hidden_size'],
         num_layers=params['num_layers'],
-        output_size=xfinai_config.lstm_model_config['output_size'],
+        output_size=xfinai_config.model_config['lstm']['output_size'],
         dropout_prob=params['dropout_prob'],
         device=device
     ).to(device)
@@ -173,22 +172,20 @@ def main(future_name, params):
                             lr=params['learning_rate'],
                             weight_decay=params['weight_decay'])
 
-    epochs = xfinai_config.lstm_model_config['epochs']
+    epochs = xfinai_config.model_config['lstm']['epochs']
 
-    print(model)
     train_losses = []
     val_losses = []
     # train the model
     for epoch in range(epochs):
-        trained_model, train_score = train(train_data_loader=train_loader, model=model, criterion=criterion,
-                                           optimizer=optimizer,
-                                           params=params)
-        val_score = validate(val_data_loader=val_loader, model=trained_model, criterion=criterion, params=params)
+        trained_model, train_loss = train(train_data_loader=train_loader, model=model, criterion=criterion,
+                                          optimizer=optimizer, params=params)
+        validation_loss = validate(val_data_loader=val_loader, model=trained_model, criterion=criterion, params=params)
 
         # report intermediate result
-        print(f"Epoch :{epoch} train_score {train_score} val_score {val_score}")
-        train_losses.append(train_score)
-        val_losses.append(val_score)
+        print(f"Epoch :{epoch} train_loss {train_loss} validation_loss {validation_loss}")
+        train_losses.append(train_loss)
+        val_losses.append(validation_loss)
 
     # save the model
     save_model(trained_model, future_name)
@@ -209,9 +206,9 @@ if __name__ == '__main__':
     params = {
         "batch_size": 32,
         "hidden_size": 64,
-        "seq_length": 8,
+        "seq_length": 128,
         "weight_decay": 0.03699014272607559,
-        "num_layers": 8,
+        "num_layers": 2,
         "learning_rate": 0.0006264079267383521,
         "dropout_prob": 0.2149846528896436
     }

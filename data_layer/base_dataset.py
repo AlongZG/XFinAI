@@ -25,7 +25,7 @@ class FuturesDatasetRecurrent(Dataset):
         pairs = []
         for idx in range(self.data.shape[0] - self.seq_length):
             x = self.df_feature[idx:idx + self.seq_length].values
-            y = self.df_label[idx + self.seq_length:idx + self.seq_length + 1].values
+            y = self.df_label[idx + self.seq_length - 1:idx + self.seq_length].values
             pairs.append((x, y))
         return pairs
 
@@ -55,7 +55,7 @@ class FuturesDatasetTable(Dataset):
         return features_list
 
     def create_xy_pairs(self):
-        pairs = [(self.df_feature.at(idx), self.df_label.at(idx)) for idx in range(self.data.shape[0])]
+        pairs = [(self.df_feature.iloc[idx].values, self.df_label.iloc[idx]) for idx in range(self.data.shape[0])]
         return pairs
 
     def __len__(self):

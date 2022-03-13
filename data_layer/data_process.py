@@ -9,12 +9,18 @@ import xfinai_config
 
 
 # Calc Return
-def calc_return(df, time_lag=1):
-    return df['close'].pct_change(time_lag).shift(time_lag).fillna(method='ffill')
+def calc_return(df, time_lag=1, price_type='close'):
+    return df[price_type].pct_change(-time_lag).shift(-time_lag).fillna(method='ffill')
 
 
-def simple_price(df, price_type='close'):
-    return df[price_type].values
+# Calc Return
+def calc_return_direction(df, time_lag=1, price_type='close'):
+    ret = df[price_type].pct_change(-time_lag).shift(-time_lag).fillna(method='ffill')
+    return (ret > 0).astype('int')
+
+
+def simple_price(df, time_lag=1, price_type='close'):
+    return df[price_type].shift(-time_lag).fillna(method='ffill').values
 
 
 # Create the label
@@ -28,14 +34,14 @@ def main():
     for future_index in xfinai_config.futures_index_map:
         # Load Origin Data
         glog.info(f"Load Origin Data future_index: {future_index}")
-        df_origin = pd.read_pickle(f'{xfinai_config.origin_data_path}/{future_index}_1m.pkl')
+        df_origin = pd.read_pickle(f'{xfinai_config.origin_data_path}/{future_index}_{xfinai_config.time_freq}.pkl')
 
         # Add time restrict
         df_restrict_time = df_origin.loc[xfinai_config.data_start_time:]
 
         # Generate Label
         glog.info(f"Generate Label future_index: {future_index}")
-        generate_label_func = partial(simple_price, price_type='close')
+        generate_label_func = partial(calc_return, price_type='close', time_lag=xfinai_config.label_time_lag)
         label_name = xfinai_config.label
         df_labeled = generate_label(df=df_restrict_time, label_func=generate_label_func, label=label_name)
 
