@@ -168,7 +168,7 @@ def main(params, future_index):
 
     criterion = nn.MSELoss()
 
-    optimizer = optim.AdamW(model.linear.parameters(),
+    optimizer = optim.AdamW(model.parameters(),
                             lr=params['learning_rate'],
                             weight_decay=params['weight_decay'])
 

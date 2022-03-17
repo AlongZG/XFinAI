@@ -13,28 +13,29 @@ from data_layer.base_dataset import FuturesDatasetRecurrent
 from utils import path_wrapper, plotter
 
 
-class LSTM(nn.Module):
-    def __init__(self, input_size, hidden_size, num_layers, output_size, dropout_prob, device, directions=1):
-        super(LSTM, self).__init__()
+class GRU(nn.Module):
+    def __init__(self, input_size, hidden_size, num_layers, output_size, dropout_prob, device):
+        super(GRU, self).__init__()
 
-        self.name = 'LSTM'
+        self.name = 'GRU'
+        self.input_size = input_size
         self.num_layers = num_layers
         self.hidden_size = hidden_size
-        self.directions = directions
         self.device = device
 
-        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True, dropout=dropout_prob)
+        self.gru = nn.GRU(input_size=self.input_size, hidden_size=self.hidden_size, num_layers=self.num_layers,
+                          batch_first=True, dropout=dropout_prob)
         self.dropout = nn.Dropout(dropout_prob)
-        self.fc = nn.Linear(hidden_size, output_size)
+        self.fc1 = nn.Linear(hidden_size, output_size)
 
     def init_hidden_states(self, batch_size):
-        state_dim = (self.num_layers * self.directions, batch_size, self.hidden_size)
-        return torch.zeros(state_dim).to(self.device), torch.zeros(state_dim).to(self.device)
+        state_dim = (self.num_layers, batch_size, self.hidden_size)
+        return torch.zeros(state_dim).to(self.device)
 
     def forward(self, x, states):
-        x, (h, c) = self.lstm(x, states)
-        x = self.fc(x)
-        return x[:, 1, :], (h, c)
+        x, h = self.gru(x, states)
+        x = self.fc1(x)
+        return x[:, -1, :], h
 
 
 def load_data(future_index):
@@ -48,20 +49,20 @@ def eval_model(model, dataloader, data_set_name, future_name, params):
     with torch.no_grad():
         y_real_list = np.array([])
         y_pred_list = np.array([])
-        states = model.init_hidden_states(params['batch_size'])
+        hidden_state = model.init_hidden_states(params['batch_size'])
 
         for idx, (x_batch, y_batch) in enumerate(dataloader):
             # Convert to Tensors
             x_batch = x_batch.float().to(model.device)
             y_batch = y_batch.float().to(model.device)
 
-            states = [state.detach() for state in states]
-            y_pred, states = model(x_batch, states)
+            hidden_state = hidden_state.detach()
+            y_pred, hidden_state = model(x_batch, hidden_state)
 
             y_real_list = np.append(y_real_list, y_batch.squeeze(1).cpu().numpy())
             y_pred_list = np.append(y_pred_list, y_pred.squeeze(1).cpu().numpy())
 
-    fig = plt.figure(figsize=[15, 3], dpi=100)
+    plt.figure(figsize=[15, 3], dpi=100)
     plt.plot(y_real_list, label=f'{data_set_name}_real')
     plt.plot(y_pred_list, label=f'{data_set_name}_pred')
     plt.legend()
@@ -69,6 +70,7 @@ def eval_model(model, dataloader, data_set_name, future_name, params):
     plt.xlabel('Time')
     plt.ylabel('Return')
     plt.subplots_adjust(bottom=0.15)
+
     result_dir = path_wrapper.wrap_path(f"{xfinai_config.inference_result_path}/{future_name}/{model.name}")
     plt.savefig(f"{result_dir}/{data_set_name}.png")
 
@@ -85,7 +87,7 @@ def train(train_data_loader, model, criterion, optimizer, params):
 
     # Set to train mode
     model.train()
-    training_states = model.init_hidden_states(params['batch_size'])
+    hidden_state = model.init_hidden_states(params['batch_size'])
     running_train_loss = 0.0
 
     # Begin training
@@ -97,16 +99,16 @@ def train(train_data_loader, model, criterion, optimizer, params):
         y_batch = y_batch.float().to(model.device)
 
         # Truncated Backpropagation
-        training_states = [state.detach() for state in training_states]
-
+        hidden_state = hidden_state.detach()
         # Make prediction
-        y_pred, training_states = model(x_batch, training_states)
+        y_pred, hidden_state = model(x_batch, hidden_state)
 
         # Calculate loss
         loss = criterion(y_pred, y_batch)
         loss.backward()
         running_train_loss += loss.item()
 
+        torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
         optimizer.step()
 
     glog.info(f"End Training Model")
@@ -120,15 +122,15 @@ def validate(val_data_loader, model, criterion, params):
     model.eval()
     running_val_loss = 0.0
     with torch.no_grad():
-        val_states = model.init_hidden_states(params['batch_size'])
+        hidden_state = model.init_hidden_states(params['batch_size'])
 
         for idx, (x_batch, y_batch) in enumerate(val_data_loader):
             # Convert to Tensors
             x_batch = x_batch.float().to(model.device)
             y_batch = y_batch.float().to(model.device)
 
-            val_states = [state.detach() for state in val_states]
-            y_pred, val_states = model(x_batch, val_states)
+            hidden_state = hidden_state.detach()
+            y_pred, hidden_state = model(x_batch, hidden_state)
 
             val_loss = criterion(y_pred, y_batch)
             running_val_loss += val_loss.item()
@@ -157,11 +159,11 @@ def main(future_name, params):
                              batch_size=params['batch_size'])
 
     # create model instance
-    model = LSTM(
+    model = GRU(
         input_size=len(train_dataset.features_list),
         hidden_size=params['hidden_size'],
         num_layers=params['num_layers'],
-        output_size=xfinai_config.model_config['lstm']['output_size'],
+        output_size=xfinai_config.model_config['gru']['output_size'],
         dropout_prob=params['dropout_prob'],
         device=device
     ).to(device)
@@ -172,23 +174,25 @@ def main(future_name, params):
                             lr=params['learning_rate'],
                             weight_decay=params['weight_decay'])
 
-    epochs = xfinai_config.model_config['lstm']['epochs']
+    epochs = xfinai_config.model_config['gru']['epochs']
 
+    print(model)
     train_losses = []
     val_losses = []
     # train the model
     for epoch in range(epochs):
-        trained_model, train_loss = train(train_data_loader=train_loader, model=model, criterion=criterion,
-                                          optimizer=optimizer, params=params)
-        validation_loss = validate(val_data_loader=val_loader, model=trained_model, criterion=criterion, params=params)
+        trained_model, train_score = train(train_data_loader=train_loader, model=model, criterion=criterion,
+                                           optimizer=optimizer,
+                                           params=params)
+        val_score = validate(val_data_loader=val_loader, model=trained_model, criterion=criterion, params=params)
 
         # report intermediate result
-        print(f"Epoch :{epoch} train_loss {train_loss} validation_loss {validation_loss}")
-        train_losses.append(train_loss)
-        val_losses.append(validation_loss)
+        print(f"Epoch :{epoch} train_score {train_score} val_score {val_score}")
+        train_losses.append(train_score)
+        val_losses.append(val_score)
 
-    # save the model
-    save_model(trained_model, future_name)
+    # # save the model
+    # save_model(trained_model, future_index)
 
     # plot losses
     plotter.plot_loss(train_losses, epochs, 'Train_Loss', trained_model.name, future_name)

@@ -4,5 +4,5 @@
 *.png
 /__pycache__
 *.idea/
-*.pth
 /result
+**/*.pth

@@ -40,6 +40,15 @@ model_config = {
              "dropout_prob": 0.10062393919712778,
              'output_size': 1,
              'epochs': 10},
+    "gru": {"batch_size": 64,
+            "hidden_size": 4,
+            "seq_length": 32,
+            "weight_decay": 0.09190719792818434,
+            "num_layers": 16,
+            "learning_rate": 0.02362264773512453,
+            "dropout_prob": 0.10062393919712778,
+            'output_size': 1,
+            'epochs': 10},
 }
 
 # feature config

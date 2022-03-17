@@ -86,7 +86,7 @@ def main():
 
         # Feature Engineering, Train Scaler
         glog.info(f"Feature Scaling future_index: {future_index}")
-        train_data, val_data, test_data = fe_scale(train_data, val_data, test_data)
+        train_data, val_data, test_data = data_scale(train_data, val_data, test_data)
 
         # select features
         glog.info(f"Feature Selecting future_index: {future_index}")
