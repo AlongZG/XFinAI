@@ -1,5 +1,4 @@
 import joblib
-from torch.utils.data import DataLoader, Dataset
 from sklearn.preprocessing import StandardScaler
 import pandas as pd
 import glog
@@ -17,12 +16,12 @@ def load_processed_data(index):
     return df
 
 
-def fe_ta(df):
+def feature_ta(df):
     tf = TaFactor(df)
     return tf.run()
 
 
-def fe_scale(train_data, val_data, test_data):
+def feature_scale(train_data, val_data, test_data):
     features_list = list(train_data.columns)
     features_list.remove(xfinai_config.label)
 
@@ -77,7 +76,7 @@ def main():
         df_processed = load_processed_data(future_index)
 
         # generate ta_factors
-        df_ta_factor = fe_ta(df_processed)
+        df_ta_factor = feature_ta(df_processed)
         df_ta_factor = data_utils.clean_data(df_ta_factor)
 
         # Split Data
@@ -86,7 +85,7 @@ def main():
 
         # Feature Engineering, Train Scaler
         glog.info(f"Feature Scaling future_index: {future_index}")
-        train_data, val_data, test_data = data_scale(train_data, val_data, test_data)
+        train_data, val_data, test_data = feature_scale(train_data, val_data, test_data)
 
         # select features
         glog.info(f"Feature Selecting future_index: {future_index}")

@@ -13,6 +13,13 @@ def calc_return(df, time_lag=1, price_type='close'):
     return df[price_type].pct_change(-time_lag).shift(-time_lag).fillna(method='ffill')
 
 
+# labeled return, (up or down)
+def label_return(df, time_lag=1, price_type='close'):
+    return_series = df[price_type].pct_change(-time_lag).shift(-time_lag).fillna(method='ffill')
+    return_labeled = (return_series > 0).astype('int')
+    return return_labeled
+
+
 # Calc Return
 def calc_return_direction(df, time_lag=1, price_type='close'):
     ret = df[price_type].pct_change(-time_lag).shift(-time_lag).fillna(method='ffill')

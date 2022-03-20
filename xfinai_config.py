@@ -1,5 +1,8 @@
 import pandas as pd
 
+# seed
+seed = 416
+
 # data config
 data_start_time = pd.to_datetime('2021-10-01')
 futures_index_map = {
@@ -48,13 +51,22 @@ model_config = {
             "learning_rate": 0.02362264773512453,
             "dropout_prob": 0.10062393919712778,
             'output_size': 1,
-            'epochs': 10},
+            'epochs': 100},
+    "gru_cls": {"batch_size": 64,
+                "hidden_size": 4,
+                "seq_length": 32,
+                "weight_decay": 0.09190719792818434,
+                "num_layers": 16,
+                "learning_rate": 0.02362264773512453,
+                "dropout_prob": 0.10062393919712778,
+                'output_size': 2,
+                'epochs': 20},
 }
 
 # feature config
 data_loader_config = {'shuffle': False,
                       'drop_last': True,
-                      'num_workers': 1,
+                      'num_workers': 2,
                       'pin_memory': True
                       }
 
