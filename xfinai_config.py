@@ -4,7 +4,7 @@ import pandas as pd
 seed = 416
 
 # data config
-data_start_time = pd.to_datetime('2021-10-01')
+data_start_time = pd.to_datetime('2022-02-21')
 futures_index_map = {
     'ic': 0,
     'ih': 1,
@@ -25,15 +25,16 @@ null_percent = 0.1
 
 # model config
 model_config = {
-    "rnn": {"batch_size": 64,
-            "hidden_size": 4,
-            "seq_length": 32,
-            "weight_decay": 0.09190719792818434,
-            "num_layers": 16,
-            "learning_rate": 0.02362264773512453,
-            "dropout_prob": 0.10062393919712778,
-            'output_size': 1,
-            'epochs': 10},
+    "rnn": {
+        "epochs": 20,
+        "batch_size": 64,
+        "hidden_size": 128,
+        "seq_length": 32,
+        "weight_decay": 0.03699014272607559,
+        "num_layers": 2,
+        "learning_rate": 0.006264079267383521,
+        "dropout_prob": 0.0049846528896436
+    },
     "lstm": {"batch_size": 64,
              "hidden_size": 4,
              "seq_length": 32,
@@ -71,9 +72,11 @@ data_loader_config = {'shuffle': False,
                       }
 
 # PATH
-origin_data_path = 'D:/projects/XFinAI/data/origin_data'
+raw_data_path = 'D:/projects/XFinAI/data/raw_data'
 processed_data_path = 'D:/projects/XFinAI/data/data_processed'
 featured_data_path = 'D:/projects/XFinAI/data/data_featured'
+raw_data_profile_path = 'D:/projects/XFinAI/EDA/data_profiles/raw_data'
+featured_data_profile_path = 'D:/projects/XFinAI/EDA/data_profiles/featured_data'
 scaler_path = 'D:/projects/XFinAI/data/scaler/'
 losses_path = 'D:/projects/XFinAI/result/losses'
 inference_result_path = 'D:/projects/XFinAI/result/inference_result'

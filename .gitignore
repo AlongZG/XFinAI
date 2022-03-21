@@ -6,3 +6,4 @@
 *.idea/
 /result
 **/*.pth
+*.html
