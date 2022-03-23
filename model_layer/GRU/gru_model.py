@@ -2,6 +2,7 @@ import glog
 import torch
 from torch import nn, optim
 from torch.utils.data import DataLoader
+import torch.nn.functional as F
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -15,7 +16,7 @@ from utils import path_wrapper, plotter
 
 
 class GRU(nn.Module):
-    def __init__(self, input_size, hidden_size, num_layers, output_size, dropout_prob, device):
+    def __init__(self, input_size, hidden_size, num_layers, output_size, dropout_prob, fc_size, device):
         super(GRU, self).__init__()
 
         self.name = 'GRU'
@@ -26,13 +27,15 @@ class GRU(nn.Module):
         self.gru = nn.GRU(input_size=self.input_size, hidden_size=self.hidden_size, num_layers=self.num_layers,
                           batch_first=True, dropout=dropout_prob)
         self.dropout = nn.Dropout(dropout_prob)
-        self.fc1 = nn.Linear(hidden_size, output_size)
+        self.fc1 = nn.Linear(hidden_size, fc_size)
+        self.fc2 = nn.Linear(fc_size, output_size)
 
     def forward(self, x):
         batch_size = x.shape[0]
         h0 = torch.zeros(self.num_layers, batch_size, self.hidden_size).requires_grad_(True).to(self.device)
         x, hn = self.gru(x, h0)
-        x = self.fc1(x)
+        x = F.relu(self.fc1(x))
+        x = self.fc2(x)
         return x[:, -1, :]
 
 
@@ -154,6 +157,7 @@ def main(future_name, params):
         num_layers=params['num_layers'],
         output_size=xfinai_config.model_config['gru']['output_size'],
         dropout_prob=params['dropout_prob'],
+        fc_size=params['fc_size'],
         device=device
     ).to(device)
 
@@ -163,7 +167,7 @@ def main(future_name, params):
                             lr=params['learning_rate'],
                             weight_decay=params['weight_decay'])
 
-    epochs = xfinai_config.model_config['gru']['epochs']
+    epochs = params['epochs']
 
     print(model)
     train_losses = []
@@ -202,13 +206,14 @@ def main(future_name, params):
 if __name__ == '__main__':
     future_name = 'ic'
     params = {
-        "epochs": 100,
-        "batch_size": 16,
+        "epochs": 10,
+        "batch_size": 128,
         "hidden_size": 128,
-        "seq_length": 32,
-        "weight_decay": 0.00015107010693290502,
-        "num_layers": 3,
-        "learning_rate": 0.0009239257488546358,
-        "dropout_prob": 0.11674166921830238
+        "seq_length": 8,
+        "weight_decay": 0.0028780633371441426,
+        "num_layers": 1,
+        "fc_size": 32,
+        "learning_rate": 0.003468997588562518,
+        "dropout_prob": 0.17088626278010194
     }
     main(future_name, params)

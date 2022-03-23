@@ -2,9 +2,9 @@ experimentName: GRU_Tune
 searchSpaceFile: gru_search_space.json
 trialCommand: python gru_tune.py
 trialConcurrency: 1
-maxTrialNumber: 10
+maxTrialNumber: 500
 trialGpuNumber: 1
-maxExperimentDuration: 1h
+maxExperimentDuration: 15h
 experimentWorkingDirectory: D:\nni_experiments
 tuner:
    name: TPE

@@ -4,7 +4,7 @@ import pandas as pd
 seed = 416
 
 # data config
-data_start_time = pd.to_datetime('2022-02-21')
+data_start_time = pd.to_datetime('2022-01-01')
 futures_index_map = {
     'ic': 0,
     'ih': 1,

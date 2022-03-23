@@ -41,10 +41,10 @@ def main():
     for future_index in xfinai_config.futures_index_map:
         # Load Origin Data
         glog.info(f"Load Origin Data future_index: {future_index}")
-        df_origin = pd.read_pickle(f'{xfinai_config.raw_data_path}/{future_index}_{xfinai_config.time_freq}.pkl')
+        df_raw = pd.read_pickle(f'{xfinai_config.raw_data_path}/{future_index}_{xfinai_config.time_freq}.pkl')
 
         # Add time restrict
-        df_restrict_time = df_origin.loc[xfinai_config.data_start_time:]
+        df_restrict_time = df_raw.loc[xfinai_config.data_start_time:]
 
         # Generate Label
         glog.info(f"Generate Label future_index: {future_index}")
