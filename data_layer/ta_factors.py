@@ -34,8 +34,6 @@ class TaFactor:
         for tick in [5, 10, 30, 90, 180, 270, 365]:
             self.data[f'ADX_{tick}tick'] = tl.ADX(self.high, self.low, self.close,
                                                   timeperiod=tick)
-            self.data[f'ADXR_{tick}tick'] = tl.ADX(self.high, self.low, self.close,
-                                                   timeperiod=tick)
             self.data[f'AROONOSC_{tick}tick'] = tl.AROONOSC(self.high, self.low, timeperiod=tick)
             self.data[f'DX_{tick}tick'] = tl.DX(self.high, self.low, self.close,
                                                 timeperiod=tick)

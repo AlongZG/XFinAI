@@ -1,11 +1,11 @@
 {
-    "epochs": {"_type":"choice", "_value": [10, 20, 30, 50, 100]},
+    "epochs": {"_type":"choice", "_value": [10, 15, 20, 25, 30]},
     "batch_size": {"_type":"choice", "_value": [16, 32, 64, 128]},
-    "hidden_size": {"_type": "choice", "_value": [4, 8, 16, 32, 64, 128, 256, 512]},
+    "hidden_size": {"_type": "choice", "_value": [4, 8, 16, 32, 64, 128, 256]},
     "seq_length": {"_type": "choice", "_value": [4, 8, 16, 32, 64, 128, 256]},
     "weight_decay": {"_type": "loguniform", "_value": [0.0001, 0.1]},
     "num_layers": {"_type": "choice", "_value": [1, 2, 3, 4]},
-    "fc_size": {"_type": "choice", "_value": [32, 64, 128, 256, 512, 1024]},
+    "fc_size": {"_type": "choice", "_value": [32, 64, 128, 256, 512]},
     "learning_rate": {"_type": "loguniform", "_value": [0.001, 0.1]},
     "dropout_prob": {"_type": "uniform", "_value": [0.1, 0.3]}
 }

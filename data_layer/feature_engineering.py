@@ -78,6 +78,7 @@ def main():
         # generate ta_factors
         df_ta_factor = feature_ta(df_processed)
         df_ta_factor = data_utils.clean_data(df_ta_factor)
+        glog.info(f"factor_num {df_ta_factor.shape[1]}")
 
         # Split Data
         glog.info(f"Split Data future_index: {future_index}")
