@@ -1,7 +1,7 @@
 import glog
 import math
-import sys
 
+import sys
 sys.path.append("../")
 
 import xfinai_config

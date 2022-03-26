@@ -1,0 +1,10 @@
+{
+    "epochs": 25,
+    "batch_size": 64,
+    "hidden_size": 8,
+    "seq_length": 32,
+    "weight_decay": 0.05337208451746517,
+    "num_layers": 1,
+    "fc_size": 512,
+    "learning_rate": 0.001646652008265547,
+    "dropout_prob": 0.16621672979785956}

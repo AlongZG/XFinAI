@@ -4,6 +4,7 @@ import torch
 from torch import nn, optim
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
+from pytorch_lightning import seed_everything
 from torch.utils.tensorboard import SummaryWriter
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -17,10 +18,10 @@ import xfinai_config
 from data_layer.base_dataset import FuturesDatasetRecurrent
 
 # initialize tensorboard writer
-# writer = SummaryWriter(log_dir=os.path.join(os.environ['NNI_OUTPUT_DIR'], 'tensorboard'))
+writer = SummaryWriter(log_dir=os.path.join(os.environ['NNI_OUTPUT_DIR'], 'tensorboard'))
 
 
-writer = SummaryWriter(log_dir=os.path.join('./', 'tensorboard'))
+# writer = SummaryWriter(log_dir=os.path.join('./', 'tensorboard'))
 
 
 class LSTM(nn.Module):
@@ -136,6 +137,9 @@ def eval_model(model, dataloader, data_set_name, future_name):
 
 
 def main(params, future_index):
+    # seed everything
+    seed_everything(xfinai_config.seed)
+
     train_data, val_data, test_data = load_data(future_index)
 
     # Transfer to accelerator

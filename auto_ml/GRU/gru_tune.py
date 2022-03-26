@@ -88,7 +88,6 @@ def validate(val_data_loader, model, criterion):
     # Set to eval mode
     model.eval()
     running_val_loss = 0.0
-    running_val_mape = 0.0
 
     with torch.no_grad():
         for idx, (x_batch, y_batch) in enumerate(val_data_loader):
@@ -101,16 +100,8 @@ def validate(val_data_loader, model, criterion):
             val_loss = criterion(y_pred, y_batch)
             running_val_loss += val_loss.item()
 
-            y_pred_array = y_pred.to('cpu').squeeze().numpy()
-            y_batch_array = y_batch.to('cpu').squeeze().numpy()
-            if np.abs(y_batch_array).min() < 1e-10:
-                running_val_mape += 0
-            else:
-                running_val_mape += mean_absolute_percentage_error(y_batch_array, y_pred_array)
-
     val_loss_average = running_val_loss / len(val_data_loader)
-    val_mape_average = running_val_mape / len(val_data_loader)
-    return val_loss_average, val_mape_average
+    return val_loss_average
 
 
 def eval_model(model, dataloader, data_set_name, future_name):
@@ -183,20 +174,19 @@ def main(params, future_index):
     for epoch in range(epochs):
         trained_model, train_loss = train(train_data_loader=train_loader, model=model, criterion=criterion,
                                           optimizer=optimizer)
-        validation_loss, val_mape = validate(val_data_loader=val_loader, model=trained_model, criterion=criterion)
+        validation_loss = validate(val_data_loader=val_loader, model=trained_model, criterion=criterion)
 
         # report intermediate result
-        nni.report_intermediate_result(val_mape)
+        nni.report_intermediate_result(validation_loss)
         # print(val_mape_average)
 
         writer.add_scalar('Loss/train', train_loss, epoch)
         writer.add_scalar('Loss/validation', validation_loss, epoch)
-        writer.add_scalar('Mape/validation', val_mape, epoch)
 
     writer.close()
 
     # report final result
-    nni.report_final_result(val_mape)
+    nni.report_final_result(validation_loss)
     # print(val_mape)
 
     # eval model on 3 datasets
@@ -207,8 +197,7 @@ def main(params, future_index):
 
 
 if __name__ == '__main__':
-    ic = 'ic'
-    future_name = ic
+    future_name = 'if'
     train_params = nni.get_next_parameter()
     # train_params = {
     #     "epochs": 1,
