@@ -1,6 +1,6 @@
 experimentName: GRU_Tune
 searchSpaceFile: gru_search_space.json
-trialCommand: python gru_tune.py
+trialCommand: python gru_tuner.py
 trialConcurrency: 1
 maxTrialNumber: 100
 trialGpuNumber: 1
@@ -9,7 +9,7 @@ experimentWorkingDirectory: D:\nni_experiments
 tuner:
    name: TPE
    classArgs:
-      optimize_mode: minimize
+      optimize_mode: maximize
 trainingService:
    platform: local
    useActiveGpu: True

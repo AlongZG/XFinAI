@@ -1,10 +1,10 @@
 experimentName: LSTM_Tune
 searchSpaceFile: lstm_search_space.json
-trialCommand: python lstm_tune.py
+trialCommand: python lstm_tuner.py
 trialConcurrency: 1
-maxTrialNumber: 10
+maxTrialNumber: 100
 trialGpuNumber: 1
-maxExperimentDuration: 1h
+maxExperimentDuration: 15h
 experimentWorkingDirectory: D:\nni_experiments
 tuner:
    name: TPE

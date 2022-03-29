@@ -13,6 +13,6 @@ def main(future_index_list, model_class_list):
 
 
 if __name__ == '__main__':
-    future_list = ['IC']
+    future_list = ['IF', 'IH']
     model_list = [RNN, LSTM, GRU]
     main(future_list, model_list)

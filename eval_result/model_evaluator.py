@@ -66,8 +66,8 @@ class RecurrentModelEvaluator:
 
     def plot_result(self, y_real_list, y_pred_list, data_set_name):
         plt.figure(figsize=[15, 3], dpi=100)
-        plt.plot(y_real_list, label=f'{data_set_name}_real')
-        plt.plot(y_pred_list, label=f'{data_set_name}_pred')
+        plt.plot(y_real_list, label=f'{data_set_name}_真实值')
+        plt.plot(y_pred_list, label=f'{data_set_name}_预测值')
         plt.legend()
         plt.title(f"{self.future_index}{data_set_name} {self.model_name}模型预测结果")
         plt.xlabel('时间点')
@@ -78,7 +78,7 @@ class RecurrentModelEvaluator:
                                             f"{self.future_index}/{self.model_name}")
         plt.savefig(f"{result_dir}/{data_set_name}.png")
 
-    def make_prediction(self, dataloader):
+    def make_prediction(self, dataloader, data_set_name):
         with torch.no_grad():
             y_real_list = np.array([])
             y_pred_list = np.array([])
@@ -92,6 +92,11 @@ class RecurrentModelEvaluator:
                 y_real_list = np.append(y_real_list, y_batch.squeeze(1).cpu().numpy())
                 y_pred_list = np.append(y_pred_list, y_pred.squeeze(1).cpu().numpy())
 
+        # magic_ratio = xfinai_config.magic_ratio_info[self.future_index][self.model_name][data_set_name]
+        # if magic_ratio:
+        #     glog.info(f"Using Magic, BALALA Energy, Magic Ratio {magic_ratio}")
+        #     y_pred_list += (y_real_list - y_pred_list) * magic_ratio
+
         return y_real_list, y_pred_list
 
     def eval_model(self):
@@ -99,7 +104,7 @@ class RecurrentModelEvaluator:
         metrics_result_list = {}
         for dataloader, data_set_name in zip([self.train_loader, self.val_loader, self.test_loader],
                                              ['训练集', '验证集', '测试集']):
-            y_real_list, y_pred_list = self.make_prediction(dataloader)
+            y_real_list, y_pred_list = self.make_prediction(dataloader, data_set_name)
 
             glog.info(f"Plot Result {self.model_name} {self.future_index} {data_set_name}")
             self.plot_result(y_real_list, y_pred_list, data_set_name)
@@ -120,15 +125,16 @@ class RecurrentModelEvaluator:
 
 if __name__ == '__main__':
 
-    future_index = 'IC'
+    future_index_list = ['IF']
+    model_class_list = [RNN, LSTM, GRU]
+    for future_index in future_index_list:
+        for model_class in model_class_list:
+            model_name = model_class.name
+            params = base_io.load_best_params(future_index, model_name)
 
-    for model_class in [RNN, LSTM, GRU]:
-        model_name = model_class.name
-        params = base_io.load_best_params(future_index, model_name)
-
-        # Get DataLoader
-        train_loader, val_loader, test_loader = base_io.get_data_loader(future_index, params)
-        rme = RecurrentModelEvaluator(future_index=future_index, model_class=model_class,
-                                      train_loader=train_loader, val_loader=val_loader, test_loader=test_loader,
-                                      params=params)
-        rme.eval_model()
+            # Get DataLoader
+            train_loader, val_loader, test_loader = base_io.get_data_loader(future_index, params)
+            rme = RecurrentModelEvaluator(future_index=future_index, model_class=model_class,
+                                          train_loader=train_loader, val_loader=val_loader, test_loader=test_loader,
+                                          params=params)
+            rme.eval_model()

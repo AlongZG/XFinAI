@@ -7,6 +7,7 @@ from torch.utils.tensorboard import SummaryWriter
 from pytorch_lightning import seed_everything
 import matplotlib.pyplot as plt
 import os
+import time
 import sys
 
 sys.path.append('../')
@@ -16,7 +17,7 @@ from eval_result.model_evaluator import RecurrentModelEvaluator
 
 
 class RecurrentModelTuner(RecurrentModelEvaluator):
-    def __init__(self, model_class, future_index, target_metric_func, metric_name):
+    def __init__(self, model_class, future_index, target_metric_func, metric_name, params):
         self.__model = None
         self.__device = None
         self.__log_dir = None
@@ -26,7 +27,7 @@ class RecurrentModelTuner(RecurrentModelEvaluator):
         self.target_metric_func = target_metric_func
         self.metric_name = metric_name
         self.model_name = model_class.name
-        self.params = base_io.load_best_params(future_index=self.future_index, model_name=self.model_name)
+        self.params = params
         self.train_loader, self.val_loader, self.test_loader = base_io.get_data_loader(self.future_index,
                                                                                        self.params)
         self.optimizer = optim.AdamW(self.model.parameters(), lr=self.params['learning_rate'],
@@ -69,8 +70,9 @@ class RecurrentModelTuner(RecurrentModelEvaluator):
                 self.__log_dir = os.environ['NNI_OUTPUT_DIR']
             except KeyError as e:
                 glog.info(f"Fetch KeyError {e}, Regarding As Test Tune Mode, Use Tensorboard Default Log Dir")
-                self.__log_dir = xfinai_config.tensorboard_log_default_path
-
+                self.__log_dir = f"{xfinai_config.tensorboard_log_default_path}/" \
+                                 f"{self.future_index}_{self.model_name}_{time.time()}"
+                path_wrapper.wrap_path(self.__log_dir)
         return self.__log_dir
 
     @property
@@ -148,7 +150,10 @@ class RecurrentModelTuner(RecurrentModelEvaluator):
         metrics_result_list = {}
         for dataloader, data_set_name in zip([self.train_loader, self.val_loader, self.test_loader],
                                              ['训练集', '验证集', '测试集']):
-            y_real_list, y_pred_list = self.make_prediction(dataloader)
+            y_real_list, y_pred_list = self.make_prediction(dataloader, data_set_name)
+
+            glog.info(f"Plot Result {self.model_name} {self.future_index} {data_set_name}")
+            self.plot_result(y_real_list, y_pred_list, data_set_name)
 
             glog.info(f"Calc Metrics {self.model_name} {self.future_index} {data_set_name}")
             metrics_result = self.calc_metrics(y_real_list, y_pred_list)
@@ -188,8 +193,11 @@ class RecurrentModelTuner(RecurrentModelEvaluator):
             train_losses.append(train_loss)
             val_losses.append(validation_loss)
 
+        self.eval_model()
+
         glog.info(f"End Training Model {self.future_index} {self.model_name}")
         self.writer.close()
 
         # report final result
         nni.report_final_result(target_tune_metric)
+

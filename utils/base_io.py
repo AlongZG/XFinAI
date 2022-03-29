@@ -19,20 +19,27 @@ def load_data(future_index):
     return train_data, val_data, test_data
 
 
-def get_data_loader(future_index, params):
-    # Load Data
-    train_data, val_data, test_data = load_data(future_index)
+def get_dataset(future_index, params):
 
-    # Create dataset & data loader
+    train_data, val_data, test_data = load_data(future_index)
     train_dataset = FuturesDatasetRecurrent(data=train_data, label=xfinai_config.label, seq_length=params['seq_length'])
     val_dataset = FuturesDatasetRecurrent(data=val_data, label=xfinai_config.label, seq_length=params['seq_length'])
     test_dataset = FuturesDatasetRecurrent(data=test_data, label=xfinai_config.label, seq_length=params['seq_length'])
+
+    return train_dataset, val_dataset, test_dataset
+
+
+def get_data_loader(future_index, params):
+    # Load Data
+    train_dataset, val_dataset, test_dataset = get_dataset(future_index, params)
+
     train_loader = DataLoader(dataset=train_dataset, **xfinai_config.data_loader_config,
                               batch_size=params['batch_size'])
     val_loader = DataLoader(dataset=val_dataset, **xfinai_config.data_loader_config,
                             batch_size=params['batch_size'])
     test_loader = DataLoader(dataset=test_dataset, **xfinai_config.data_loader_config,
                              batch_size=params['batch_size'])
+
     return train_loader, val_loader, test_loader
 
 
