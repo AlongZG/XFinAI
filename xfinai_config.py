@@ -34,8 +34,8 @@ model_config = {
     "GRU": {
         'output_size': 1
     },
-    "gru_cls": {
-        'output_size': 2,
+    "EncoderGRU_AttnDecoderGRU": {
+        'output_size': 1
     },
 }
 
@@ -113,3 +113,5 @@ inference_result_path = 'D:/projects/XFinAI/result/inference_result'
 model_save_path = 'D:/projects/XFinAI/model_layer/trained_models'
 best_params_path = 'D:/projects/XFinAI/model_layer/best_params'
 tensorboard_log_default_path = 'D:/nni_experiments/tensorboard_default'
+attention_weights_path = 'D:/projects/XFinAI/explainable_algorithm/attention_weights'
+lime_result_path = 'D:/projects/XFinAI/explainable_algorithm/lime_explain_result'

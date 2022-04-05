@@ -1,0 +1,15 @@
+experimentName: GRU_Tune
+searchSpaceFile: attention_gru_search_space.json
+trialCommand: python attention_gru_tuner.py
+trialConcurrency: 1
+maxTrialNumber: 100
+trialGpuNumber: 1
+maxExperimentDuration: 15h
+experimentWorkingDirectory: D:\nni_experiments
+tuner:
+   name: TPE
+   classArgs:
+      optimize_mode: maximize
+trainingService:
+   platform: local
+   useActiveGpu: True

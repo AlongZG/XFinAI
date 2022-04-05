@@ -1,3 +1,4 @@
+import joblib
 import pandas as pd
 import json
 import sys
@@ -51,8 +52,58 @@ def load_best_params(future_index, model_name):
     return params
 
 
-def save_model(model, future_index):
+def save_model(model, future_index, seq2seq=False):
     dir_path = path_wrapper.wrap_path(f"{xfinai_config.model_save_path}/{future_index}")
-    save_path = f"{dir_path}/{model.name}.pth"
-    glog.info(f"Starting save model state, save_path: {save_path}")
-    torch.save(model.state_dict(), save_path)
+    if not seq2seq:
+        save_path = f"{dir_path}/{model.name}.pth"
+        glog.info(f"Starting save model state, save_path: {save_path}")
+        torch.save(model.state_dict(), save_path)
+    else:
+        encoder, decoder = model
+        dir_path = path_wrapper.wrap_path(f"{dir_path}/{encoder.name}_{decoder.name}")
+
+        encoder_save_path = f"{dir_path}/{encoder.name}.pth"
+        glog.info(f"Starting save encoder state, save_path: {encoder_save_path}")
+        torch.save(encoder.state_dict(), encoder_save_path)
+
+        decoder_save_path = f"{dir_path}/{decoder.name}.pth"
+        glog.info(f"Starting save decoder state, save_path: {decoder_save_path}")
+        torch.save(decoder.state_dict(), decoder_save_path)
+        
+
+def load_model(model, future_index, seq2seq=False):
+    dir_path = path_wrapper.wrap_path(f"{xfinai_config.model_save_path}/{future_index}")
+    if not seq2seq:
+        model_path = f"{dir_path}/{model.name}.pth"
+        glog.info(f"Loading model state, model_path: {model_path}")
+        model.load_state_dict(torch.load(model_path))
+        return model
+    else:
+        encoder, decoder = model
+        dir_path = path_wrapper.wrap_path(f"{dir_path}/{encoder.name}_{decoder.name}")
+
+        encoder_path = f"{dir_path}/{encoder.name}.pth"
+        glog.info(f"Loading encoder state, model_path: {encoder_path}")
+        encoder.load_state_dict(torch.load(encoder_path))
+
+        decoder_path = f"{dir_path}/{decoder.name}.pth"
+        glog.info(f"Loading decoder state, model_path: {decoder_path}")
+        decoder.load_state_dict(torch.load(decoder_path))
+        return encoder, decoder
+
+
+def save_attention_weights(attention_weights, future_index, model_name):
+    attention_weights_dir = path_wrapper.wrap_path(f"{xfinai_config.attention_weights_path}/"
+                                                   f"{future_index}/{model_name}")
+    attention_weights_path = f"{attention_weights_dir}/attention_weights.pkl"
+    glog.info(f"Save attention weights  to {attention_weights_path}")
+    joblib.dump(attention_weights, attention_weights_path)
+
+
+def save_metrics_result(metrics_result_list, future_index, model_name):
+    df_metrics_result = pd.DataFrame(metrics_result_list)
+    metrics_result_path = f"{xfinai_config.inference_result_path}/" \
+                          f"{future_index}/{model_name}/metrics.csv"
+    glog.info(f"Save metrics result to {metrics_result_path}")
+    df_metrics_result.to_csv(metrics_result_path)
+    return df_metrics_result
