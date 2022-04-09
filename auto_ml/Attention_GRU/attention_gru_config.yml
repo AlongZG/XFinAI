@@ -1,4 +1,4 @@
-experimentName: GRU_Tune
+experimentName: Attention_GRU_Tune
 searchSpaceFile: attention_gru_search_space.json
 trialCommand: python attention_gru_tuner.py
 trialConcurrency: 1

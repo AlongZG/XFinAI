@@ -9,6 +9,12 @@ import xfinai_config
 plt.rcParams['font.sans-serif'] = ['SimHei']
 plt.rcParams['axes.unicode_minus'] = False
 
+color = ['#dc2624', '#2b4750', '#45a0a2', '#e87a59',
+         '#7dcaa9', '#649E7D', '#dc8018', '#C89F91',
+         '#6c6d6c', '#4f6268', '#c7cccf']
+rc_params = {'font.sans-serif': 'SimHei',
+             'axes.unicode_minus': False}
+
 
 def plot_loss(losses, epoch_num, loss_name, model_name, future_name):
     plt.figure(figsize=[6, 3], dpi=100)

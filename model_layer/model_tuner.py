@@ -11,7 +11,7 @@ import sys
 sys.path.append('../')
 import xfinai_config
 from utils import path_wrapper
-from eval_result.model_evaluator import RecurrentModelEvaluator, Seq2SeqModelEvaluator
+from model_layer.model_evaluator import RecurrentModelEvaluator, Seq2SeqModelEvaluator
 
 
 class RecurrentModelTuner(RecurrentModelEvaluator):

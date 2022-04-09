@@ -2,6 +2,7 @@
 *.csv
 *.ipynb_checkpoints
 *.png
+*.jpg
 /__pycache__
 *.idea/
 /result

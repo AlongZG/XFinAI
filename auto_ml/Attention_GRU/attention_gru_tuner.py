@@ -23,6 +23,6 @@ if __name__ == '__main__':
     encoder_class = EncoderGRU
     decoder_class = AttnDecoderGRU
     model_name = f"{encoder_class.name}_{decoder_class.name}"
-    params = base_io.load_best_params(future_index, model_name)
-    # params = nni.get_next_parameter()
+    # params = base_io.load_best_params(future_index, model_name)
+    params = nni.get_next_parameter()
     main(future_index, encoder_class, decoder_class, params)

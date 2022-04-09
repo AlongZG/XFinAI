@@ -23,5 +23,5 @@ def train_seq2seq_model():
 
 
 if __name__ == '__main__':
-    train_recurrent_model()
-    # train_seq2seq_model()
+    # train_recurrent_model()
+    train_seq2seq_model()
