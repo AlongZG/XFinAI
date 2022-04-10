@@ -48,7 +48,7 @@ class RecurrentModelEvaluator(RecurrentModelTrainer):
     def calc_metrics(y_real, y_pred):
         mae = mean_absolute_error(y_real, y_pred)
         mse = mean_squared_error(y_real, y_pred)
-        mape = mean_absolute_percentage_error(y_real, y_pred)
+        mape = mean_absolute_percentage_error(y_real[y_real != 0], y_pred[y_real != 0])
         r_2 = r2_score(y_real, y_pred)
 
         result = {
@@ -98,8 +98,10 @@ class RecurrentModelEvaluator(RecurrentModelTrainer):
 
         return y_real_list, y_pred_list
 
-    def eval_model(self):
+    def eval_model(self, tune_mode=False):
         glog.info(f"Start Eval Model {self.model_name} On {self.future_index}")
+        if not tune_mode:
+            self.__load_model()
         metrics_result_list = {}
         for dataloader, data_set_name in zip([self.train_loader, self.val_loader, self.test_loader],
                                              ['训练集', '验证集', '测试集']):
@@ -211,9 +213,10 @@ class Seq2SeqModelEvaluator(Seq2SeqModelTrainer):
 
         return y_real_list, y_pred_list
 
-    def eval_model(self):
+    def eval_model(self, tune_mode=False):
         glog.info(f"Start Eval Model {self.model_name} On {self.future_index}")
-        self.__load_encoder_decoder()
+        if not tune_mode:
+            self.__load_encoder_decoder()
         metrics_result_list = {}
         for dataloader, data_set_name in zip([self.train_loader, self.val_loader, self.test_loader],
                                              ['训练集', '验证集', '测试集']):

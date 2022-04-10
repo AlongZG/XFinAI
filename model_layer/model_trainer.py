@@ -32,7 +32,13 @@ class RecurrentModelTrainer:
 
     @params.setter
     def params(self, __params):
+        # if reset params, upload model & data_loader & optimizer
         self.__params = __params
+        self.train_loader, self.val_loader, self.test_loader = base_io.get_data_loader(self.future_index,
+                                                                                       self.__params)
+        self.__model = None
+        self.__optimizer = optim.AdamW(self.model.parameters(), lr=self.params['learning_rate'],
+                                       weight_decay=self.params['weight_decay'])
 
     @property
     def device(self):
@@ -150,14 +156,26 @@ class Seq2SeqModelTrainer:
 
     @property
     def params(self):
-        self.__params.update({"input_size": len(self.train_loader.dataset.features_list),
-                              "device": self.device,
-                              "output_size": xfinai_config.model_config[self.model_name]['output_size']})
-        return self.__params
+        if "input_size" not in self.__params:
+            self.__params.update({"input_size": len(self.train_loader.dataset.features_list),
+                                  "device": self.device,
+                                  "output_size": xfinai_config.model_config[self.model_name]['output_size']})
+            return self.__params
+        else:
+            return self.__params
 
     @params.setter
     def params(self, __params):
+        # if reset params, upload model & data_loader & optimizer
         self.__params = __params
+        self.train_loader, self.val_loader, self.test_loader = base_io.get_data_loader(self.future_index,
+                                                                                       self.__params)
+        self.encoder = None
+        self.decoder = None
+        self.__encoder_optimizer = optim.AdamW(self.encoder.parameters(), lr=self.params['learning_rate'],
+                                               weight_decay=self.params['weight_decay'])
+        self.__decoder_optimizer = optim.AdamW(self.decoder.parameters(), lr=self.params['learning_rate'],
+                                               weight_decay=self.params['weight_decay'])
 
     @property
     def device(self):
