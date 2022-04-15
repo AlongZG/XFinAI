@@ -16,12 +16,11 @@ from model_layer.model_evaluator import RecurrentModelEvaluator, Seq2SeqModelEva
 
 class RecurrentModelTuner(RecurrentModelEvaluator):
     def __init__(self, model_class, future_index, target_metric_func, metric_name, params):
-        super().__init__(future_index=future_index, model_class=model_class)
+        super().__init__(future_index=future_index, model_class=model_class, params=params)
         self.__log_dir = None
         self.__writer = None
         self.target_metric_func = target_metric_func
         self.metric_name = metric_name
-        self.params = params
 
     @property
     def log_dir(self):
@@ -116,13 +115,13 @@ class RecurrentModelTuner(RecurrentModelEvaluator):
 
 class Seq2SeqModelTuner(Seq2SeqModelEvaluator):
     def __init__(self, encoder_class, decoder_class, future_index, target_metric_func, metric_name, params):
-        super().__init__(future_index=future_index, encoder_class=encoder_class, decoder_class=decoder_class)
+        super().__init__(future_index=future_index, encoder_class=encoder_class, decoder_class=decoder_class,
+                         params=params)
 
         self.__log_dir = None
         self.__writer = None
         self.target_metric_func = target_metric_func
         self.metric_name = metric_name
-        self.params = params
 
     @property
     def log_dir(self):

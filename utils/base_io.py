@@ -102,8 +102,9 @@ def save_attention_weights(attention_weights, future_index, model_name):
 
 def save_metrics_result(metrics_result_list, future_index, model_name):
     df_metrics_result = pd.DataFrame(metrics_result_list)
-    metrics_result_path = f"{xfinai_config.inference_result_path}/" \
-                          f"{future_index}/{model_name}/metrics.csv"
+    dir_path = path_wrapper.wrap_path(f"{xfinai_config.inference_result_path}/"
+                                      f"{future_index}/{model_name}")
+    metrics_result_path = f"{dir_path}/metrics.csv"
     glog.info(f"Save metrics result to {metrics_result_path}")
     df_metrics_result.to_csv(metrics_result_path)
     return df_metrics_result

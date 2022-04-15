@@ -10,13 +10,13 @@ from utils import plotter, base_io
 
 
 class RecurrentModelTrainer:
-    def __init__(self, model_class, future_index):
+    def __init__(self, model_class, future_index, params):
         self.__model = None
         self.__device = None
         self.model_class = model_class
         self.future_index = future_index
         self.model_name = model_class.name
-        self.__params = base_io.load_best_params(future_index=self.future_index, model_name=self.model_name)
+        self.__params = params
         self.train_loader, self.val_loader, self.test_loader = base_io.get_data_loader(self.future_index,
                                                                                        self.__params)
         self.__optimizer = optim.AdamW(self.model.parameters(), lr=self.params['learning_rate'],
@@ -29,16 +29,6 @@ class RecurrentModelTrainer:
                               "device": self.device,
                               "output_size": xfinai_config.model_config[self.model_name]['output_size']})
         return self.__params
-
-    @params.setter
-    def params(self, __params):
-        # if reset params, upload model & data_loader & optimizer
-        self.__params = __params
-        self.train_loader, self.val_loader, self.test_loader = base_io.get_data_loader(self.future_index,
-                                                                                       self.__params)
-        self.__model = None
-        self.__optimizer = optim.AdamW(self.model.parameters(), lr=self.params['learning_rate'],
-                                       weight_decay=self.params['weight_decay'])
 
     @property
     def device(self):
@@ -108,7 +98,7 @@ class RecurrentModelTrainer:
 
     def run(self):
         # seed everything
-        seed_everything(xfinai_config.seed)
+        seed_everything(xfinai_config.seed, workers=True)
 
         epochs = self.params['epochs']
 
@@ -137,15 +127,15 @@ class RecurrentModelTrainer:
 
 
 class Seq2SeqModelTrainer:
-    def __init__(self, future_index, encoder_class, decoder_class):
+    def __init__(self, future_index, encoder_class, decoder_class, params):
         self.__encoder = None
         self.__decoder = None
         self.__device = None
+        self.__params = params
         self.encoder_class = encoder_class
         self.decoder_class = decoder_class
         self.future_index = future_index
         self.model_name = f"{self.encoder_class.name}_{self.decoder_class.name}"
-        self.__params = base_io.load_best_params(future_index=self.future_index, model_name=self.model_name)
         self.train_loader, self.val_loader, self.test_loader = base_io.get_data_loader(self.future_index,
                                                                                        self.__params)
         self.__encoder_optimizer = optim.AdamW(self.encoder.parameters(), lr=self.params['learning_rate'],
@@ -163,19 +153,6 @@ class Seq2SeqModelTrainer:
             return self.__params
         else:
             return self.__params
-
-    @params.setter
-    def params(self, __params):
-        # if reset params, upload model & data_loader & optimizer
-        self.__params = __params
-        self.train_loader, self.val_loader, self.test_loader = base_io.get_data_loader(self.future_index,
-                                                                                       self.__params)
-        self.encoder = None
-        self.decoder = None
-        self.__encoder_optimizer = optim.AdamW(self.encoder.parameters(), lr=self.params['learning_rate'],
-                                               weight_decay=self.params['weight_decay'])
-        self.__decoder_optimizer = optim.AdamW(self.decoder.parameters(), lr=self.params['learning_rate'],
-                                               weight_decay=self.params['weight_decay'])
 
     @property
     def device(self):
@@ -282,8 +259,6 @@ class Seq2SeqModelTrainer:
         return val_loss_average
 
     def run(self):
-        # seed everything
-        seed_everything(xfinai_config.seed)
 
         epochs = self.params['epochs']
 

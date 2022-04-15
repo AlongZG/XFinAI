@@ -1,7 +1,10 @@
 import sys
+from pytorch_lightning import seed_everything
 
 import nni
 from sklearn.metrics import r2_score
+
+import xfinai_config
 
 sys.path.append('../..')
 from model_layer.model_hub import EncoderGRU, AttnDecoderGRU
@@ -19,18 +22,19 @@ def main(future_index, encoder_class, decoder_class, params):
 
 
 if __name__ == '__main__':
-    future_index = 'IC'
+    seed_everything(xfinai_config.seed, workers=True)
+    future_index = 'IH'
     encoder_class = EncoderGRU
     decoder_class = AttnDecoderGRU
     model_name = f"{encoder_class.name}_{decoder_class.name}"
-    params = nni.get_next_parameter()
-#     params = {
-#      "epochs": 2,
-#      "batch_size": 64,
-#      "hidden_size": 8,
-#      "seq_length": 32,
-#      "weight_decay": 0.0028780633371441426,
-#      "learning_rate": 0.003468997588562518,
-#      "dropout_prob": 0.17088626278010194
-# }
+    # params = nni.get_next_parameter()
+    params = {
+        "epochs": 10,
+        "batch_size": 32,
+        "hidden_size": 8,
+        "seq_length": 64,
+        "weight_decay": 0.014896126293298352,
+        "learning_rate": 0.007421382952353398,
+        "dropout_prob": 0.20520860052969295
+    }
     main(future_index, encoder_class, decoder_class, params)

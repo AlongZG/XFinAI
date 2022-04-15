@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import sys
 from model_layer.model_hub import RNN, LSTM, GRU, EncoderGRU, AttnDecoderGRU
 from model_layer.model_trainer import RecurrentModelTrainer, Seq2SeqModelTrainer
+from pytorch_lightning import seed_everything
 
 sys.path.append("../")
 import xfinai_config
@@ -18,8 +19,8 @@ plt.rcParams['axes.unicode_minus'] = False
 
 
 class RecurrentModelEvaluator(RecurrentModelTrainer):
-    def __init__(self, future_index, model_class):
-        super().__init__(future_index=future_index, model_class=model_class)
+    def __init__(self, future_index, model_class, params):
+        super().__init__(future_index=future_index, model_class=model_class, params=params)
         self.__time_step_map = None
         self.__tick_interval_map = None
 
@@ -125,8 +126,8 @@ class RecurrentModelEvaluator(RecurrentModelTrainer):
 
 
 class Seq2SeqModelEvaluator(Seq2SeqModelTrainer):
-    def __init__(self, future_index, encoder_class, decoder_class):
-        super().__init__(future_index, encoder_class, decoder_class)
+    def __init__(self, future_index, encoder_class, decoder_class, params):
+        super().__init__(future_index, encoder_class, decoder_class, params)
         self.attention_weights_map = {}
 
         self.__time_step_map = None
@@ -241,17 +242,25 @@ def eval_recurrent_model():
     model_class_list = [RNN, LSTM, GRU]
     for future_index in future_index_list:
         for model_class in model_class_list:
-            rme = RecurrentModelEvaluator(future_index=future_index, model_class=model_class)
+            params = base_io.load_best_params(future_index=future_index, model_name=model_class.name)
+
+            rme = RecurrentModelEvaluator(future_index=future_index, model_class=model_class, params=params)
             rme.eval_model()
 
 
 def eval_seq2seq_model():
-    future_index_list = ['IC']
+    future_index_list = ['IH']
+    model_name = f"{EncoderGRU.name}_{AttnDecoderGRU.name}"
+
     for future_index in future_index_list:
-        sme = Seq2SeqModelEvaluator(future_index=future_index, encoder_class=EncoderGRU, decoder_class=AttnDecoderGRU)
+
+        params = base_io.load_best_params(future_index=future_index, model_name=model_name)
+        sme = Seq2SeqModelEvaluator(future_index=future_index, encoder_class=EncoderGRU, decoder_class=AttnDecoderGRU,
+                                    params=params)
         sme.eval_model()
 
 
 if __name__ == '__main__':
+    seed_everything(xfinai_config.seed, workers=True)
     eval_seq2seq_model()
     # eval_recurrent_model()
