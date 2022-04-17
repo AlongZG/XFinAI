@@ -238,7 +238,7 @@ class Seq2SeqModelEvaluator(Seq2SeqModelTrainer):
 
 
 def eval_recurrent_model():
-    future_index_list = ['IC']
+    future_index_list = ['IH', 'IF', 'IC']
     model_class_list = [RNN, LSTM, GRU]
     for future_index in future_index_list:
         for model_class in model_class_list:
@@ -249,7 +249,7 @@ def eval_recurrent_model():
 
 
 def eval_seq2seq_model():
-    future_index_list = ['IH']
+    future_index_list = ['IH', 'IF', 'IC']
     model_name = f"{EncoderGRU.name}_{AttnDecoderGRU.name}"
 
     for future_index in future_index_list:
@@ -262,5 +262,5 @@ def eval_seq2seq_model():
 
 if __name__ == '__main__':
     seed_everything(xfinai_config.seed, workers=True)
-    eval_seq2seq_model()
-    # eval_recurrent_model()
+    # eval_seq2seq_model()
+    eval_recurrent_model()

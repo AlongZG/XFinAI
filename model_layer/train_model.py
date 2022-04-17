@@ -9,7 +9,7 @@ from utils import base_io
 
 
 def train_recurrent_model():
-    future_list = ['IC', 'IH', 'IF']
+    future_list = ['IF', 'IC', 'IH']
     model_list = [RNN, LSTM, GRU]
     for future_index in future_list:
         for model_class in model_list:
@@ -19,7 +19,7 @@ def train_recurrent_model():
 
 
 def train_seq2seq_model():
-    future_list = ['IH']
+    future_list = ['IF', 'IC', 'IH']
     for future_index in future_list:
         model_name = f"{EncoderGRU.name}_{AttnDecoderGRU.name}"
         params = base_io.load_best_params(future_index, model_name)
