@@ -10,13 +10,13 @@ sys.path.append("../")
 import xfinai_config
 from model_layer.model_evaluator import Seq2SeqModelEvaluator
 from model_layer.model_hub import *
-from utils import plotter
+from utils import plotter, base_io
 
 
 class Seq2SeqLimeExplainer(Seq2SeqModelEvaluator):
-    def __init__(self, future_index, encoder_class, decoder_class):
-        super(Seq2SeqLimeExplainer, self).__init__(future_index, encoder_class, decoder_class)
-
+    def __init__(self, future_index, encoder_class, decoder_class, params):
+        super(Seq2SeqLimeExplainer, self).__init__(future_index, encoder_class, decoder_class, params)
+        self.load_encoder_decoder()
         self.num_samples = 6400
         self.num_feature = 10
         self.train_x = np.array(self.train_loader.dataset.data_x)
@@ -92,8 +92,10 @@ def main():
     future_index = 'IC'
     encoder_class = EncoderGRU
     decoder_class = AttnDecoderGRU
+    model_name = f"{EncoderGRU.name}_{AttnDecoderGRU.name}"
+    params = base_io.load_best_params(future_index, model_name)
     explainer = Seq2SeqLimeExplainer(future_index=future_index, encoder_class=encoder_class,
-                                     decoder_class=decoder_class)
+                                     decoder_class=decoder_class, params=params)
     explainer.run_lime_explain()
 
 

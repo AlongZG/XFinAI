@@ -129,11 +129,11 @@ class Seq2SeqModelEvaluator(Seq2SeqModelTrainer):
     def __init__(self, future_index, encoder_class, decoder_class, params):
         super().__init__(future_index, encoder_class, decoder_class, params)
         self.attention_weights_map = {}
-
+        self.raw_prediction_map = {}
         self.__time_step_map = None
         self.__tick_interval_map = None
 
-    def __load_encoder_decoder(self):
+    def load_encoder_decoder(self):
         self.encoder, self.decoder = base_io.load_model((self.encoder, self.decoder),
                                                         future_index=self.future_index, seq2seq=True)
 
@@ -206,7 +206,7 @@ class Seq2SeqModelEvaluator(Seq2SeqModelTrainer):
                 attn_weights_list.append(attn_weights)
 
         self.attention_weights_map[data_set_name] = attn_weights_list
-
+        self.raw_prediction_map[data_set_name] = y_pred_list
         # magic_ratio = xfinai_config.magic_ratio_info[self.future_index][self.model_name][data_set_name]
         # if magic_ratio:
         #     glog.info(f"Using Magic, BALALA Energy, Magic Ratio {magic_ratio}")
@@ -217,7 +217,7 @@ class Seq2SeqModelEvaluator(Seq2SeqModelTrainer):
     def eval_model(self, tune_mode=False):
         glog.info(f"Start Eval Model {self.model_name} On {self.future_index}")
         if not tune_mode:
-            self.__load_encoder_decoder()
+            self.load_encoder_decoder()
         metrics_result_list = {}
         for dataloader, data_set_name in zip([self.train_loader, self.val_loader, self.test_loader],
                                              ['训练集', '验证集', '测试集']):
@@ -232,7 +232,7 @@ class Seq2SeqModelEvaluator(Seq2SeqModelTrainer):
 
         df_metrics_result = base_io.save_metrics_result(metrics_result_list, self.future_index, self.model_name)
         base_io.save_attention_weights(self.attention_weights_map, self.future_index, self.model_name)
-
+        base_io.save_raw_prediction(self.raw_prediction_map, self.future_index, self.model_name)
         glog.info(f"End Eval Model {self.model_name} On {self.future_index}")
         print(df_metrics_result, flush=True)
 
@@ -249,7 +249,7 @@ def eval_recurrent_model():
 
 
 def eval_seq2seq_model():
-    future_index_list = ['IH', 'IF', 'IC']
+    future_index_list = ['IC']
     model_name = f"{EncoderGRU.name}_{AttnDecoderGRU.name}"
 
     for future_index in future_index_list:
@@ -262,5 +262,5 @@ def eval_seq2seq_model():
 
 if __name__ == '__main__':
     seed_everything(xfinai_config.seed, workers=True)
-    # eval_seq2seq_model()
-    eval_recurrent_model()
+    eval_seq2seq_model()
+    # eval_recurrent_model()

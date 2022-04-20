@@ -100,6 +100,13 @@ def save_attention_weights(attention_weights, future_index, model_name):
     joblib.dump(attention_weights, attention_weights_path)
 
 
+def save_raw_prediction(raw_prediction, future_index, model_name):
+    raw_prediction_dir = path_wrapper.wrap_path(f"{xfinai_config.raw_prediction_path}/{future_index}/{model_name}")
+    raw_prediction_path = f"{raw_prediction_dir}/raw_prediction_map.pkl"
+    glog.info(f"Save raw_prediction to {raw_prediction_path}")
+    joblib.dump(raw_prediction, raw_prediction_path)
+
+
 def save_metrics_result(metrics_result_list, future_index, model_name):
     df_metrics_result = pd.DataFrame(metrics_result_list)
     dir_path = path_wrapper.wrap_path(f"{xfinai_config.inference_result_path}/"
