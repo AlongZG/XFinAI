@@ -92,11 +92,6 @@ class RecurrentModelEvaluator(RecurrentModelTrainer):
                 y_real_list = np.append(y_real_list, y_batch.squeeze(1).cpu().numpy())
                 y_pred_list = np.append(y_pred_list, y_pred.squeeze(1).cpu().numpy())
 
-        # magic_ratio = xfinai_config.magic_ratio_info[self.future_index][self.model_name][data_set_name]
-        # if magic_ratio:
-        #     glog.info(f"Using Magic, BALALA Energy, Magic Ratio {magic_ratio}")
-        #     y_pred_list += (y_real_list - y_pred_list) * magic_ratio
-
         return y_real_list, y_pred_list
 
     def eval_model(self, tune_mode=False):
@@ -207,10 +202,6 @@ class Seq2SeqModelEvaluator(Seq2SeqModelTrainer):
 
         self.attention_weights_map[data_set_name] = attn_weights_list
         self.raw_prediction_map[data_set_name] = y_pred_list
-        # magic_ratio = xfinai_config.magic_ratio_info[self.future_index][self.model_name][data_set_name]
-        # if magic_ratio:
-        #     glog.info(f"Using Magic, BALALA Energy, Magic Ratio {magic_ratio}")
-        #     y_pred_list += (y_real_list - y_pred_list) * magic_ratio
 
         return y_real_list, y_pred_list
 
